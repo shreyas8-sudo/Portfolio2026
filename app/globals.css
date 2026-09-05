@@ -1,0 +1,316 @@
+@import "tailwindcss";
+
+/* ============================================================
+   DESIGN TOKENS
+   Extracted from two years of camera roll: chai + sky.
+   Greyscale carries structure; accents carry meaning.
+   ============================================================ */
+
+@theme {
+  /* --- greyscale base (structure) --- */
+  --color-grey-00: #fcfcfb;
+  --color-grey-05: #f4f4f2;
+  --color-grey-10: #e9e9e6;
+  --color-grey-20: #d6d6d2;
+  --color-grey-40: #a8a8a3;
+  --color-grey-60: #6e6e69;
+  --color-grey-90: #232322;
+
+  /* --- accents (semantic, never decorative) --- */
+  --color-blue: #3d6bc4;      /* identity, links, primary */
+  --color-sky: #6c9fde;       /* secondary, ongoing, HYD */
+  --color-peri: #b3c3e5;      /* ghost plane, footer accents */
+  --color-marigold: #e0b33c;  /* concept status, LAX */
+  --color-orange: #d97a2a;    /* SHIPPED status only */
+  --color-navy: #1e2d50;      /* footer, dark surfaces */
+  --color-navy-deep: #131c33;
+
+  /* --- case study accents --- */
+  --color-basis: #35654d;
+  --color-basis-light: #6b9c82;
+  --color-synechron: #2f4a7c; /* deeper than --color-blue, so the case reads apart from links */
+
+  /* --- type --- */
+  --font-sans: var(--font-instrument), ui-sans-serif, system-ui, sans-serif;
+  --font-mono: var(--font-plex-mono), ui-monospace, monospace;
+  --font-dot: var(--font-doto), var(--font-plex-mono), monospace;
+
+  /* --- type scale (custom, not framework default) --- */
+  --text-hero: 3.5rem;
+  --text-hero--line-height: 1.04;
+  --text-hero--letter-spacing: -0.03em;
+  --text-title: 2.75rem;
+  --text-title--line-height: 1.08;
+  --text-title--letter-spacing: -0.025em;
+  --text-section: 1.875rem;
+  --text-section--line-height: 1.16;
+  --text-section--letter-spacing: -0.02em;
+  --text-sub: 1.375rem;
+  --text-sub--line-height: 1.25;
+  --text-sub--letter-spacing: -0.01em;
+  --text-body-lg: 1.125rem;
+  --text-body-lg--line-height: 1.6;
+  --text-body: 1rem;
+  --text-body--line-height: 1.6;
+  --text-caption: 0.875rem;
+  --text-caption--line-height: 1.5;
+  --text-label: 0.6875rem;
+  --text-label--line-height: 1.3;
+  --text-label--letter-spacing: 0.1em;
+
+  /* --- spacing --- */
+  --spacing-gutter: 1.5rem;
+
+  /* --- varied radii (uniform radius = template tell) --- */
+  --radius-sharp: 2px;
+  --radius-card: 10px;
+  --radius-panel: 14px;
+  --radius-tag: 16px;
+  --radius-pill: 999px;
+
+  /* --- layout --- */
+  --container-content: 60rem; /* 960px — 67% of 1440 */
+}
+
+/* ============================================================
+   BASE
+   ============================================================ */
+
+:root {
+  color-scheme: light;
+  --page-bg: var(--color-grey-00);
+  --dot-grid: rgba(35, 35, 34, 0.055);
+}
+
+html {
+  scroll-behavior: smooth;
+}
+
+body {
+  background-color: var(--page-bg);
+  /* paper texture: fine dot grid, never plain white */
+  background-image: radial-gradient(var(--dot-grid) 1px, transparent 1px);
+  background-size: 22px 22px;
+  color: var(--color-grey-90);
+  font-family: var(--font-sans);
+  -webkit-font-smoothing: antialiased;
+  text-rendering: optimizeLegibility;
+}
+
+::selection {
+  background: var(--color-peri);
+  color: var(--color-navy);
+}
+
+:focus-visible {
+  outline: 2px solid var(--color-blue);
+  outline-offset: 3px;
+  border-radius: 2px;
+}
+
+/* ============================================================
+   UTILITIES
+   ============================================================ */
+
+@utility container-content {
+  width: 100%;
+  max-width: var(--container-content);
+  margin-inline: auto;
+  padding-inline: 1.5rem;
+}
+
+/* mono wayfinding label — used for every section header */
+@utility label {
+  font-family: var(--font-mono);
+  font-size: var(--text-label);
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  font-weight: 500;
+}
+
+/* dot-matrix flight codes, clocks, gate numbers */
+@utility dot-code {
+  font-family: var(--font-dot);
+  letter-spacing: 0.04em;
+  font-weight: 800;
+}
+
+/* nav link — orange + bold on hover, underline grows from centre outwards */
+.nav-link {
+  position: relative;
+  display: inline-block;
+  font-size: var(--text-caption);
+  font-weight: 400;
+  padding-bottom: 3px;
+  transition: font-weight 120ms ease;
+}
+
+.nav-link:hover > span:first-child,
+.nav-link:focus-visible > span:first-child,
+.nav-link[data-active="true"] > span:first-child {
+  color: var(--color-orange);
+  font-weight: 600;
+}
+
+.nav-underline {
+  position: absolute;
+  left: 0;
+  bottom: 0;
+  height: 1.5px;
+  width: 100%;
+  background: var(--color-orange);
+  transform: scaleX(0);
+  transform-origin: center;
+  transition: transform 260ms cubic-bezier(0.22, 1, 0.36, 1);
+}
+
+.nav-link:hover .nav-underline,
+.nav-link:focus-visible .nav-underline,
+.nav-link[data-active="true"] .nav-underline {
+  transform: scaleX(1);
+}
+
+/* arrow link — the tail draws out of the text and pushes the head right */
+.arrow-link {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.4rem;
+  font-size: var(--text-caption);
+  font-weight: 500;
+}
+
+.arrow-line {
+  display: inline-flex;
+  align-items: flex-end;
+}
+
+/* the tail, a real element so it always meets the head exactly */
+.arrow-tail {
+  display: block;
+  height: 1.4px;
+  width: 0;
+  margin-bottom: 0.9px;
+  border-radius: 999px;
+  opacity: 0;
+  transition:
+    width 280ms cubic-bezier(0.22, 1, 0.36, 1),
+    opacity 180ms ease;
+}
+
+.arrow-head {
+  display: block;
+  width: 12px;
+  height: 12px;
+  flex: none;
+}
+
+.arrow-link:hover .arrow-tail,
+.arrow-link:focus-visible .arrow-tail {
+  width: 13px;
+  opacity: 1;
+}
+
+/* boarding-pass perforation */
+@utility perforation {
+  background-image: repeating-linear-gradient(
+    to right,
+    var(--color-grey-20) 0 2px,
+    transparent 2px 9px
+  );
+  height: 1px;
+}
+
+/* ============================================================
+   MOTION
+   Rule: motion demonstrates, directs, or has character. Never ambient noise.
+   ============================================================ */
+
+/* hero sky — paler washes, but they travel much further so the drift reads. */
+/* the washes drift by moving the gradient inside a static box, not by moving
+   the box. that keeps the fade-out mask below pinned to the hero's bottom edge. */
+@keyframes sky-a {
+  0%   { background-position: 8% 14%;  background-size: 150% 150%; }
+  50%  { background-position: 66% 56%; background-size: 205% 205%; }
+  100% { background-position: 8% 14%;  background-size: 150% 150%; }
+}
+@keyframes sky-b {
+  0%   { background-position: 88% 74%; background-size: 195% 195%; }
+  50%  { background-position: 24% 20%; background-size: 145% 145%; }
+  100% { background-position: 88% 74%; background-size: 195% 195%; }
+}
+
+.hero-sky {
+  position: relative;
+  isolation: isolate;
+  /* fades to fully transparent, so the page's dot grid emerges underneath
+     instead of the sky stopping against it on a hard line */
+  background: linear-gradient(
+    180deg,
+    #dfe9f7 0%,
+    #e7eef8 34%,
+    rgba(233, 239, 248, 0.55) 68%,
+    rgba(233, 239, 248, 0) 100%
+  );
+}
+
+.hero-sky::before,
+.hero-sky::after {
+  content: "";
+  position: absolute;
+  inset: 0;
+  z-index: -1;
+  pointer-events: none;
+  background-repeat: no-repeat;
+  will-change: background-position, background-size;
+
+  /* fade the wash out well before the section ends, so nothing is ever clipped */
+  -webkit-mask-image: linear-gradient(
+    180deg,
+    #000 0%,
+    #000 52%,
+    transparent 94%
+  );
+  mask-image: linear-gradient(180deg, #000 0%, #000 52%, transparent 94%);
+}
+
+.hero-sky::before {
+  background-image: radial-gradient(
+    closest-side,
+    rgba(108, 159, 222, 0.5) 0%,
+    rgba(108, 159, 222, 0.16) 52%,
+    rgba(108, 159, 222, 0) 80%
+  );
+  animation: sky-a 13s ease-in-out infinite;
+}
+
+.hero-sky::after {
+  background-image: radial-gradient(
+    closest-side,
+    rgba(61, 107, 196, 0.38) 0%,
+    rgba(61, 107, 196, 0.12) 54%,
+    rgba(61, 107, 196, 0) 82%
+  );
+  animation: sky-b 17s ease-in-out infinite;
+}
+
+@keyframes marquee {
+  from { transform: translateX(0); }
+  to   { transform: translateX(-50%); }
+}
+
+.marquee-track {
+  animation: marquee 32s linear infinite;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+    scroll-behavior: auto !important;
+  }
+  .hero-sky::before,
+  .hero-sky::after { animation: none; }
+}

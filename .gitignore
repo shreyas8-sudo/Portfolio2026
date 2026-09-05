@@ -1,0 +1,17 @@
+node_modules/
+.next/
+
+# raw source media, never served. only public/media/ ships.
+# keeps the repo small and avoids GitHub's 100MB per-file limit.
+media/inbox/
+
+.DS_Store
+**/.DS_Store
+out/
+build/
+.DS_Store
+*.pem
+.env*.local
+.vercel
+next-env.d.ts
+*.tsbuildinfo

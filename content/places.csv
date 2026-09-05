@@ -1,0 +1,16 @@
+place,date,caption,photo
+# ─────────────────────────────────────────────────────────────────────
+# Every place since starting college. Add one row per stop.
+#
+#   place    city name — that's all, I'll look up the coordinates
+#   date     free text: "Mar 2024", "Summer 2023", "home", "2023 —"
+#   caption  one line, your voice. what you remember about it.
+#   photo    filename you'll drop in public/media/places/ (or leave blank)
+#
+# Lines starting with # are ignored. Commas inside a field: wrap in "quotes".
+# ─────────────────────────────────────────────────────────────────────
+Hyderabad,home,"where it started — fine arts before Figma",hyderabad.webp
+Los Angeles,2023 —,"USC. business by day, design by night",la.webp
+New York,Summer 2026,"eight weeks at Synechron and a lot of walking",nyc.webp
+Chicago,Aug 2026,,chicago.webp
+Bengaluru,,,bengaluru.webp
