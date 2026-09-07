@@ -4,6 +4,25 @@ import { useEffect, useState } from "react";
 import Link from "next/link";
 import Plane from "@/components/Plane";
 
+/** Way out of a case study, back to the work on the home page. */
+export function BackToWork({ accent }: { accent: string }) {
+  return (
+    <Link
+      href="/#work"
+      className="group inline-flex items-center gap-2 text-caption text-grey-60 transition-colors duration-200 hover:text-grey-90"
+    >
+      <span
+        aria-hidden="true"
+        className="transition-transform duration-300 group-hover:-translate-x-1"
+        style={{ color: accent }}
+      >
+        ←
+      </span>
+      back to all work
+    </Link>
+  );
+}
+
 /** Back-to-top pill, appears after a bit of scrolling. */
 export function BackToTop({ accent }: { accent: string }) {
   const [shown, setShown] = useState(false);
@@ -37,12 +56,15 @@ export function NextFlight({
   flight,
   title,
   accent,
+  logo,
 }: {
   href: string;
   code: string;
   flight: string;
   title: string;
   accent: string;
+  /** the next case study's mark, so you can see where you're going */
+  logo?: string;
 }) {
   return (
     <Link
@@ -50,6 +72,14 @@ export function NextFlight({
       className="group mt-16 block border-t border-grey-20 bg-grey-05 py-10"
     >
       <div className="container-content flex items-center gap-6">
+        {logo && (
+          // eslint-disable-next-line @next/next/no-img-element
+          <img
+            src={logo}
+            alt=""
+            className="size-12 shrink-0 object-contain transition-transform duration-300 group-hover:scale-105"
+          />
+        )}
         <div className="flex-1">
           <p className="label text-grey-40">Next flight</p>
           <p className="mt-1.5 text-sub font-medium text-grey-90">{title}</p>

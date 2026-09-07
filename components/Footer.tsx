@@ -56,7 +56,6 @@ export default function Footer() {
                   { href: site.linkedin, label: "linkedin" },
                   { href: `mailto:${site.email}`, label: "email" },
                   { href: site.beli, label: "beli" },
-                  { href: site.instagram, label: "instagram" },
                 ].map((l) => (
                   <li key={l.label}>
                     <a

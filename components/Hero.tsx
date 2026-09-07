@@ -2,8 +2,9 @@
 
 import { useState } from "react";
 import { motion, AnimatePresence } from "framer-motion";
-import { site, credentials, waypoints, type Waypoint } from "@/lib/site";
+import { site, waypoints, type Waypoint } from "@/lib/site";
 import Plane from "./Plane";
+import Settle from "./Settle";
 
 /* pin colours, brighter, and marigold swapped for orange so the
    numbers inside stay legible against white */
@@ -15,9 +16,9 @@ const COLOR: Record<Waypoint["color"], string> = {
 
 /* dots sit wide apart, framing the centred name */
 const ANCHOR: Record<Waypoint["position"], { x: number; y: number }> = {
-  left: { x: 6, y: 42 },
-  bottom: { x: 50, y: 88 },
-  right: { x: 94, y: 26 },
+  left: { x: 10, y: 42 },
+  bottom: { x: 50, y: 86 },
+  right: { x: 90, y: 26 },
 };
 
 /* plane rests tucked just above the name */
@@ -35,8 +36,8 @@ export default function Hero() {
         {/* plane */}
         <motion.div
           className="pointer-events-none absolute z-10"
-          initial={false}
-          animate={{ left: `${planeAt.x}%`, top: `${planeAt.y}%` }}
+          initial={{ left: "-12%", top: `${REST.y}%`, opacity: 0 }}
+          animate={{ left: `${planeAt.x}%`, top: `${planeAt.y}%`, opacity: 1 }}
           transition={{ type: "spring", stiffness: 48, damping: 17, mass: 1 }}
           style={{ translate: "-50% -50%" }}
         >
@@ -45,31 +46,20 @@ export default function Hero() {
 
         {/* centred name block */}
         <div className="relative z-20 flex h-full flex-col items-center justify-center text-center">
-          <h1 className="text-[clamp(2.25rem,5.2vw,3.5rem)] font-semibold leading-[1.05] tracking-[-0.03em] text-grey-90">
-            {site.name}.
-          </h1>
+          <Settle delay={0.05}>
+            <h1 className="text-[clamp(2.25rem,5.2vw,3.5rem)] font-semibold leading-[1.05] tracking-[-0.03em] text-grey-90">
+              {site.name}.
+            </h1>
+          </Settle>
 
           {/* the tagline carries the hero now. sized off the viewport so it always
               holds one line, never breaking mid-thought */}
-          <p className="mt-5 whitespace-nowrap text-[clamp(0.9rem,3.15vw,1.6rem)] font-medium leading-[1.3] tracking-[-0.015em] text-grey-60">
-            Designing to make complex systems feel{" "}
-            <span style={{ color: "var(--color-blue)" }}>simple</span>.
-          </p>
-
-          <ul className="mt-6 flex flex-wrap items-center justify-center gap-x-6 gap-y-2">
-            {credentials.map((c) => (
-              <li key={c.n} className="flex items-center gap-2">
-                <span
-                  className="label"
-                  style={{ color: `var(--color-${c.color})` }}
-                >
-                  [{c.n}]
-                </span>
-                <span className="text-caption text-grey-60">{c.text}</span>
-              </li>
-            ))}
-          </ul>
-
+          <Settle delay={0.16} distance={14}>
+            <p className="mt-5 max-w-[22ch] text-balance text-[clamp(1.15rem,3.15vw,1.6rem)] font-medium leading-[1.3] tracking-[-0.015em] text-grey-60 sm:max-w-none sm:whitespace-nowrap">
+              Designing to make complex systems feel{" "}
+              <span style={{ color: "var(--color-blue)" }}>simple</span>.
+            </p>
+          </Settle>
         </div>
 
         {/* nudge toward the dots, bottom left */}
@@ -86,8 +76,16 @@ export default function Hero() {
           const pos = ANCHOR[w.position];
           const isActive = active === w.id;
           return (
-            <button
+            <motion.button
               key={w.id}
+              initial={{ opacity: 0, scale: 0.6 }}
+              animate={{ opacity: 1, scale: 1 }}
+              transition={{
+                type: "spring",
+                stiffness: 500,
+                damping: 22,
+                delay: 0.42 + i * 0.09,
+              }}
               onClick={() => setActive(isActive ? null : w.id)}
               aria-pressed={isActive}
               aria-label={w.label}
@@ -119,7 +117,7 @@ export default function Hero() {
                   opacity: isActive ? 0.5 : 0.25,
                 }}
               />
-            </button>
+            </motion.button>
           );
         })}
 

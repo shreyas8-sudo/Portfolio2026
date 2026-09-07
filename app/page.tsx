@@ -12,7 +12,7 @@ export default function Home() {
       <Hero />
 
       {/* SELECTED WORK */}
-      <section className="container-content pt-20">
+      <section id="work" className="container-content scroll-mt-28 pt-20">
         <div className="flex items-center gap-4">
           <h2
             className="label text-[0.8125rem]"

@@ -35,7 +35,15 @@ export default function ProcessVariance({
           <p className="text-caption font-semibold text-grey-90">
             {process}
           </p>
-          <p className="label text-grey-40">one process, {lanes.length} shapes</p>
+          {/* the whole point of the diagram, said inside it */}
+          <p className="text-caption font-medium text-grey-90">
+            <mark
+              className="rounded-[2px] px-1.5 py-0.5 text-grey-90"
+              style={{ background: "rgba(47,74,124,0.14)" }}
+            >
+              One process, {lanes.length} shapes
+            </mark>
+          </p>
         </div>
 
         <div className="mt-5 space-y-5">

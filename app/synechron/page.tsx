@@ -7,10 +7,12 @@ import ProcessVariance, { type Lane } from "@/components/case/ProcessVariance";
 import EventStitch from "@/components/case/EventStitch";
 import SpecFramework from "@/components/case/SpecFramework";
 import HoverSwap from "@/components/case/HoverSwap";
+import HoverFigure from "@/components/case/HoverFigure";
 import PositioningMap, { type Player } from "@/components/case/PositioningMap";
 import Takeaways from "@/components/case/Takeaways";
+import Mark from "@/components/case/Mark";
 import ContactButton from "@/components/ContactButton";
-import { NextFlight } from "@/components/case/CaseChrome";
+import { BackToWork, NextFlight } from "@/components/case/CaseChrome";
 
 export const metadata: Metadata = {
   title: "Synechron",
@@ -20,6 +22,7 @@ export const metadata: Metadata = {
 
 const A = "var(--color-synechron)";
 const M = "/media/synechron";
+const TINT = "rgba(47,74,124,0.14)";
 
 const sections: Section[] = [
   { id: "problem", label: "problem", group: "Track 01" },
@@ -114,37 +117,37 @@ const rebuilds = [
     steps: [
       {
         src: "processmap-v2.webp",
-        label: "Before",
-        head: "Editing arrived, and covered the thing you were editing.",
-        good: "Mining the real path worked, variations became switchable on the canvas, and steps finally became editable.",
-        bad: "The editor floated over the map, so you lost sight of the process while changing it, and a separate actions menu competed with it.",
+        label: "V1",
+        head: "The step editor covered the workspace.",
+        good: "The flowchart elements were right, so those carried through untouched.",
+        bad: "Opening a step buried the map behind it, there were too many buttons competing on one screen, and the variation switcher got overlooked entirely.",
       },
       {
         src: "process-map.webp",
         label: "Chosen",
-        head: "Dock the editor, and separate what you can change from what was mined.",
-        good: "The panel moved into the rail so the map stays visible, and inside it editable attributes sit above read-only mined data and read-only controls.",
-        bad: "In a tool whose output becomes evidence, being able to see what you cannot change is the whole point. That is why this one won.",
+        head: "A simpler, cleaner screen, which is what users preferred.",
+        good: "The editor docked into the rail so the map stays visible, and the variation switcher moved to the top where people actually found it.",
+        bad: "Inside the panel, editable attributes now sit above read-only mined data and read-only controls. In a tool whose output becomes evidence, seeing what you cannot change is the point.",
       },
     ],
   },
   {
     feature: "Variations",
-    lead: "From drilling into one, to comparing all of them.",
+    lead: "From one at a time, to all of them at once.",
     steps: [
       {
         src: "variationv1.webp",
         label: "V1",
-        head: "One variation at a time, with comparison bolted on.",
-        good: "The changes-from-base vocabulary was precise: two added, one modified, one removed, per jurisdiction.",
-        bad: "It assumed you already knew the base model, and comparing jurisdictions meant clicking through them one by one. The matrix underneath was small and secondary.",
+        head: "The heat map idea was right, the framing was not.",
+        good: "Reading coverage as a colour grid worked, so that idea survived into the final version.",
+        bad: "It only showed one jurisdiction at a time, so comparing meant clicking through them, and the matrix underneath was small and secondary.",
       },
       {
         src: "final.webp",
         label: "Chosen",
-        head: "Make the comparison the whole screen.",
-        good: "Jurisdictions became columns, steps became rows, and coverage per jurisdiction reads straight off the bottom.",
-        bad: "It answers the question a compliance team actually asks, which steps run where, without a single click.",
+        head: "All three combined into one visual.",
+        good: "Easy to see the detail and compare across jurisdictions at the same time, without losing either.",
+        bad: "It also carries just enough detail that the separate process map view became redundant, which is how I knew it was the right one.",
       },
     ],
   },
@@ -152,17 +155,23 @@ const rebuilds = [
 
 const flows = [
   {
-    src: "dashboard.webp",
+    src: "flow-dashboard.mp4",
+    poster: "flow-dashboard-poster.webp",
+    ratio: "1600/882",
     name: "Dashboard",
     body: "Systems onboarded, processes mined, variations detected. Case ID matches below 85% get flagged, which is the platform raising its hand for a human.",
   },
   {
-    src: "onboard.webp",
+    src: "flow-onboarding.mp4",
+    poster: "flow-onboarding-poster.webp",
+    ratio: "1600/882",
     name: "Onboarding",
     body: "Eight steps to connect a system, with a real access control gate. The system owner approves before any data moves, and it is not a rubber stamp.",
   },
   {
-    src: "process-map.webp",
+    src: "flow-process-map.mp4",
+    poster: "flow-process-map-poster.webp",
+    ratio: "1600/1290",
     name: "Process map",
     body: "The case as one reconstructed timeline instead of five disconnected logs. Where the thread broke, the break is flagged on the map, not buried in a footnote.",
   },
@@ -170,16 +179,12 @@ const flows = [
 
 const takeaways: [string, string][] = [
   [
-    "UI/UX isn't a standalone job anymore.",
-    "This summer required a designer, a PM, and a little bit of a developer, in the same seat.",
+    "UI/UX isn't a standalone job anymore, and the highest-leverage thing I shipped was a markdown file.",
+    "This summer needed a designer, a PM, and a little bit of a developer in the same seat. The design work was the visible half. The skill sitting in the enterprise repo is the half other people are still using. Ship where the leverage is, even when it is not in Figma.",
   ],
   [
     "Keeping up with the tools is part of the job now.",
     "Config 2026 shipped motion, code layers and agents, and I was using them in my workflow within the week. In a field moving this fast, knowing what just became possible is a design skill, not a side interest.",
-  ],
-  [
-    "The highest-leverage artifact I shipped was written in markdown, not Figma.",
-    "The design work was the visible half of the summer. The skill in the enterprise repo is the half that other people are still using. Ship where the leverage is.",
   ],
   [
     "Work worth doing rarely lands on your desk.",
@@ -194,12 +199,11 @@ const record = [
   ["Tools", "Figma · Claude Design · Figma Agents · Figma Motion"],
 ];
 
-/* TODO Shreya: LinkedIn URLs */
 const team = [
-  { name: "Anup Variava", url: "#" },
-  { name: "Matt Craddock", url: "#" },
-  { name: "Frances Cruz", url: "#" },
-  { name: "Glenn Notman", url: "#" },
+  { name: "Anup Variava", url: "https://www.linkedin.com/in/anupv/" },
+  { name: "Matt Craddock", url: "https://www.linkedin.com/in/matt-craddock/" },
+  { name: "Frances Cruz", url: "https://www.linkedin.com/in/francescruz/" },
+  { name: "Glen Notman", url: "https://www.linkedin.com/in/glen-notman-32b94/" },
 ];
 
 
@@ -214,7 +218,10 @@ export default function SynechronPage() {
     <article>
       {/* ── HERO ─────────────────────────────────────── */}
       <Shell>
-        <div className="flex flex-col gap-8 pt-12 lg:flex-row lg:items-stretch">
+        <div className="pt-8">
+          <BackToWork accent={A} />
+        </div>
+        <div className="flex flex-col gap-8 pt-6 lg:flex-row lg:items-stretch">
           <div className="w-full shrink-0 rounded-[--radius-panel] border border-grey-20 bg-grey-00 p-6 lg:w-[20rem]">
             <div className="flex items-center gap-3">
               {/* eslint-disable-next-line @next/next/no-img-element */}
@@ -375,15 +382,20 @@ export default function SynechronPage() {
                 Where it stops, on purpose
               </h3>
               <p className="mt-2.5 max-w-[68ch] text-body text-grey-60">
-                It documents and flags. It never executes. When the output is
-                evidence for a regulator, a person makes the call, not a black box.
-                The platform produces bottleneck reports, control gaps and audit
-                packages, and humans act on them.
+                When the output is evidence for a regulator, a person makes the
+                call, not a black box. The platform produces bottleneck reports,
+                control gaps and audit packages, and humans act on them.
+              </p>
+              <p className="mt-5 max-w-[52ch] text-body-lg leading-relaxed text-grey-90">
+                <Mark tint={TINT}>It documents and flags. It never executes.</Mark>
               </p>
             </section>
 
             {/* ── FLOWS ──────────────────────────────── */}
-            <section id="flows" className="scroll-mt-32 pt-16">
+            <section
+              id="flows"
+              className="mt-20 scroll-mt-32 rounded-[--radius-panel] bg-[#eef2f8] p-6 md:p-10"
+            >
               <SectionHead
                 label="Three flows"
                 takeaway="Three screens carry the whole story."
@@ -407,8 +419,9 @@ export default function SynechronPage() {
                     </div>
                     <Figure
                       src={`${M}/${f.src}`}
-                      ratio="16/9"
-                      top
+                      video
+                      poster={`${M}/${f.poster}`}
+                      ratio={f.ratio}
                       label={f.name}
                       accent={A}
                     />
@@ -433,6 +446,8 @@ export default function SynechronPage() {
                   "task journeys",
                   "personas",
                   "platform goals",
+                  "design the platform",
+                  "iterate",
                 ].map((s, i, arr) => (
                   <li key={s} className="flex items-center gap-2">
                     <span
@@ -472,7 +487,7 @@ export default function SynechronPage() {
                   yHigh="discovers unknown ones"
                   highlight="tl"
                   accent={A}
-                  caption="Hover a name to see what it does. The empty quadrant is the whole argument."
+                  caption="The empty quadrant is the whole argument."
                 />
               </div>
 
@@ -519,24 +534,32 @@ export default function SynechronPage() {
                             {v.head}
                           </h4>
 
-                          <p className="mt-3 flex gap-2 text-[13px] leading-snug text-grey-60 transition-colors duration-300 group-hover:text-grey-90">
-                            <span
-                              className="label shrink-0 pt-0.5"
-                              style={{ color: "#4a6b52" }}
-                            >
-                              kept
-                            </span>
-                            {v.good}
-                          </p>
-                          <p className="mt-2 flex gap-2 text-[13px] leading-snug text-grey-60 transition-colors duration-300 group-hover:text-grey-90">
-                            <span
-                              className="label shrink-0 pt-0.5"
-                              style={{ color: chosen ? A : "#a8443a" }}
-                            >
-                              {chosen ? "why" : "broke"}
-                            </span>
-                            {v.bad}
-                          </p>
+                          {/* labels get their own fixed column so the body text
+                              starts on the same left edge in every card */}
+                          <dl className="mt-3 space-y-2">
+                            <div className="grid grid-cols-[3.25rem_minmax(0,1fr)] gap-x-2">
+                              <dt
+                                className="label pt-[3px]"
+                                style={{ color: "#4a6b52" }}
+                              >
+                                kept
+                              </dt>
+                              <dd className="text-[13px] leading-snug text-grey-60 transition-colors duration-300 group-hover:text-grey-90">
+                                {v.good}
+                              </dd>
+                            </div>
+                            <div className="grid grid-cols-[3.25rem_minmax(0,1fr)] gap-x-2">
+                              <dt
+                                className="label pt-[3px]"
+                                style={{ color: chosen ? A : "#a8443a" }}
+                              >
+                                {chosen ? "why" : "broke"}
+                              </dt>
+                              <dd className="text-[13px] leading-snug text-grey-60 transition-colors duration-300 group-hover:text-grey-90">
+                                {v.bad}
+                              </dd>
+                            </div>
+                          </dl>
                         </li>
                       );
                     })}
@@ -574,15 +597,33 @@ export default function SynechronPage() {
                 accent={A}
               />
               <p className="mt-4 max-w-[68ch] text-body text-grey-60">
-                I went to Matt Craddock, Head of North America AI at Synechron,
-                because I was curious and wanted more than my lane. He threw ten
-                directions at me.
+                I went to leadership on the AI side and asked where else I could
+                learn and be useful, because I was curious and wanted more than my
+                lane. They threw ten directions at me.
               </p>
               <p className="mt-4 max-w-[68ch] text-body text-grey-60">
-                We landed on spec-driven development: structuring specs, meaning
-                the what, the why, acceptance criteria, tests and alternatives, so
-                an AI coding agent can build reliably from them.
+                We landed on spec-driven development.
               </p>
+
+              {/* say plainly what a spec is, and what I actually built */}
+              <div
+                className="mt-6 max-w-[68ch] rounded-[--radius-card] border-l-2 py-1 pl-5"
+                style={{ borderColor: A }}
+              >
+                <p className="text-body text-grey-60">
+                  A <span className="font-medium text-grey-90">spec</span> is a
+                  specification, a written description of a change that says what
+                  to build, why it matters, what counts as done, and what was
+                  considered and rejected. Engineers write them before they write
+                  code, and an AI coding agent needs one to build reliably.
+                </p>
+                <p className="mt-3 text-body text-grey-60">
+                  The thing I made is not a spec. It is a{" "}
+                  <span className="font-medium text-grey-90">skill</span>, a set of
+                  instructions that teaches an AI agent how to produce a good spec
+                  from whatever someone has already written down.
+                </p>
+              </div>
             </section>
 
             {/* ── THE CALL ───────────────────────────── */}
@@ -650,9 +691,13 @@ export default function SynechronPage() {
               </h3>
               <p className="mt-2.5 max-w-[68ch] text-body text-grey-60">
                 Contribution guidelines, automated review, formatting gates, on my
-                first-ever real Git workflow. It passed on attempt four. The skill
-                now lives in Synechron&apos;s enterprise repo, used by engineers
-                across the firm.
+                first-ever real Git workflow. It passed on attempt four.
+              </p>
+              <p className="mt-5 max-w-[52ch] text-body-lg leading-relaxed text-grey-90">
+                <Mark tint={TINT}>
+                  The skill now lives in Synechron&apos;s enterprise repo, used by
+                  engineers across the firm.
+                </Mark>
               </p>
               <div className="mt-6">
                 <HoverSwap
@@ -672,6 +717,20 @@ export default function SynechronPage() {
             <section id="takeaways" className="scroll-mt-32 pt-16">
               <SectionHead label="Takeaways" accent={A} />
               <Takeaways items={takeaways} accent={A} />
+
+              {/* the summer itself */}
+              <div className="mt-12 grid gap-4 sm:grid-cols-2">
+                <HoverFigure
+                  src={`${M}/office1.webp`}
+                  ratio="4/3"
+                  caption="Synechron's headquarters in New York!"
+                />
+                <HoverFigure
+                  src={`${M}/office2.webp`}
+                  ratio="4/3"
+                  caption="Got to sit in on client pitches as well!"
+                />
+              </div>
             </section>
 
             {/* ── CLOSING ────────────────────────────── */}
@@ -697,6 +756,7 @@ export default function SynechronPage() {
         flight="BK165"
         title="An AI copilot for cost segregation engineers"
         accent="var(--color-basis)"
+        logo="/media/basis/logo.webp"
       />
     </article>
   );

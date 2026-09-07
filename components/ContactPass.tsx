@@ -102,7 +102,7 @@ export default function ContactPass({
           animate={{ opacity: 1, y: 0, scale: 1 }}
           exit={{ opacity: 0, y: -4, scale: 0.995 }}
           transition={{ duration: 0.18, ease: [0.22, 1, 0.36, 1] }}
-          className="fixed right-6 top-[4.75rem] z-50 w-[21rem] overflow-hidden rounded-[--radius-card] border border-grey-20 bg-grey-00 shadow-[0_12px_36px_rgba(19,28,51,0.13)] md:right-10"
+          className="fixed inset-x-4 top-[4.75rem] z-50 overflow-hidden sm:inset-x-auto sm:right-6 sm:w-[21rem] rounded-[--radius-card] border border-grey-20 bg-grey-00 shadow-[0_12px_36px_rgba(19,28,51,0.13)] md:right-10"
         >
           {/* header, dark navy banner */}
           <div className="flex items-center justify-between bg-gradient-to-r from-[#131c33] to-[#24365c] px-4 py-3">

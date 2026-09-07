@@ -6,10 +6,9 @@
 export const site = {
   name: "Shreya Shanmugam",
   tagline: "Designing to make complex systems feel simple.",
-  email: "shreyas8@usc.edu",
+  email: "shreya.shanmugam25@gmail.com",
   linkedin: "https://www.linkedin.com/in/shreyaa-shanmugam",
   beli: "https://beliapp.co/app/snackitupwshrey",
-  instagram: "https://instagram.com/", // TODO: confirm URL
   status: "Open to full-time · 2027",
   signoff: "See you at the next gate.",
   lastUpdated: "Aug 2026",
@@ -51,13 +50,6 @@ export const waypoints: Waypoint[] = [
     color: "blue",
   },
 ];
-
-/* --- credential line under the tagline --- */
-export const credentials = [
-  { n: "1", text: "Product design @ Synechron", color: "blue" },
-  { n: "2", text: "Co-founder @ Basis", color: "sky" },
-  { n: "3", text: "Business + Design @ USC", color: "marigold" },
-] as const;
 
 /* --- case studies --- */
 export type CaseStudy = {

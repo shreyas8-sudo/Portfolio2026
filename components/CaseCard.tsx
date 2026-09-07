@@ -20,7 +20,9 @@ export default function CaseCard({ study }: { study: CaseStudy }) {
       onMouseLeave={() => setHover(false)}
       onFocus={() => setHover(true)}
       onBlur={() => setHover(false)}
-      className="group block overflow-hidden rounded-[--radius-panel] border border-grey-20 bg-grey-00 transition-shadow duration-300 hover:shadow-[0_4px_18px_rgba(0,0,0,0.045)]"
+      /* press feedback: the card dips under the cursor and springs back,
+         so a click registers before the next page has loaded */
+      className="group block overflow-hidden rounded-[--radius-panel] border border-grey-20 bg-grey-00 transition-[transform,box-shadow] duration-300 ease-[cubic-bezier(0.22,1,0.36,1)] hover:-translate-y-0.5 hover:shadow-[0_6px_22px_rgba(0,0,0,0.06)] active:translate-y-0 active:scale-[0.994] active:duration-100"
     >
       <CaseCover
         poster={study.cover.poster}

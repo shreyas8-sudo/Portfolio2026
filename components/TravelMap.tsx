@@ -114,26 +114,43 @@ export default function TravelMap() {
     return () => el.removeEventListener("wheel", onWheel);
   }, [zoomBy]);
 
+  /* Drag starts here but is tracked on the window.
+     Pointer capture on an SVG child breaks the moment a zoom re-render
+     replaces that child, which is what made zoom-then-drag throw. */
   const onPointerDown = (e: React.PointerEvent) => {
-    (e.target as Element).setPointerCapture?.(e.pointerId);
     drag.current = { x: e.clientX, y: e.clientY, ox: view.x, oy: view.y };
     setDragging(true);
   };
 
-  const onPointerMove = (e: React.PointerEvent) => {
-    if (!drag.current || !svgRef.current) return;
-    const rect = svgRef.current.getBoundingClientRect();
-    const dx = ((e.clientX - drag.current.x) / rect.width) * W;
-    const dy = ((e.clientY - drag.current.y) / rect.height) * H;
-    setView((v) =>
-      clamp({ k: v.k, x: drag.current!.ox + dx, y: drag.current!.oy + dy })
-    );
-  };
+  useEffect(() => {
+    if (!dragging) return;
 
-  const endDrag = () => {
-    drag.current = null;
-    setDragging(false);
-  };
+    const move = (e: PointerEvent) => {
+      const el = svgRef.current;
+      /* snapshot the origin. setView's updater runs after this function
+         returns, and by then a pointerup may already have nulled the ref. */
+      const d = drag.current;
+      if (!d || !el) return;
+      const rect = el.getBoundingClientRect();
+      const dx = ((e.clientX - d.x) / rect.width) * W;
+      const dy = ((e.clientY - d.y) / rect.height) * H;
+      setView((v) => clamp({ k: v.k, x: d.ox + dx, y: d.oy + dy }));
+    };
+
+    const up = () => {
+      drag.current = null;
+      setDragging(false);
+    };
+
+    window.addEventListener("pointermove", move);
+    window.addEventListener("pointerup", up);
+    window.addEventListener("pointercancel", up);
+    return () => {
+      window.removeEventListener("pointermove", move);
+      window.removeEventListener("pointerup", up);
+      window.removeEventListener("pointercancel", up);
+    };
+  }, [dragging, clamp]);
 
   const reset = () => setView({ k: 1, x: 0, y: 0 });
 
@@ -155,7 +172,7 @@ export default function TravelMap() {
 
   return (
     <div className="overflow-hidden rounded-[--radius-panel] border border-grey-20 bg-gradient-to-br from-[#0f1626] via-[#16203a] to-[#22314f]">
-      <div className="grid gap-0 md:grid-cols-[2.5fr_1fr]">
+      <div className="grid grid-cols-1 gap-0 md:grid-cols-[2.5fr_1fr]">
         {/* map */}
         <div className="relative p-5">
           <p className="label pointer-events-none absolute left-6 top-5 z-10 text-[var(--color-peri)]">
@@ -197,9 +214,6 @@ export default function TravelMap() {
             role="img"
             aria-label="Map of places visited"
             onPointerDown={onPointerDown}
-            onPointerMove={onPointerMove}
-            onPointerUp={endDrag}
-            onPointerLeave={endDrag}
           >
             <g transform={`translate(${view.x} ${view.y}) scale(${view.k})`}>
               <path

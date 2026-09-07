@@ -124,7 +124,9 @@ async function run() {
       await sharp(input)
         .rotate() // respect EXIF orientation
         .resize({ width, withoutEnlargement: true })
-        .webp({ quality: 80 })
+        /* 80 was crushing the fine text in UI screenshots. 92 roughly
+           doubles file size and keeps 11px labels legible. */
+        .webp({ quality: 92 })
         .toFile(dest);
 
       if (tmp) await unlink(tmp).catch(() => {});

@@ -5,8 +5,9 @@ import SectionHead from "@/components/case/SectionHead";
 import WorkflowDiagram, { type View } from "@/components/case/WorkflowDiagram";
 import HoverFigure from "@/components/case/HoverFigure";
 import Takeaways from "@/components/case/Takeaways";
+import Mark from "@/components/case/Mark";
 import ContactButton from "@/components/ContactButton";
-import { NextFlight } from "@/components/case/CaseChrome";
+import { BackToWork, NextFlight } from "@/components/case/CaseChrome";
 
 export const metadata: Metadata = {
   title: "Basis",
@@ -16,6 +17,7 @@ export const metadata: Metadata = {
 
 const A = "var(--color-basis)"; // case accent, Basis green
 const M = "/media/basis";
+const TINT = "rgba(53,101,77,0.14)";
 
 const sections: Section[] = [
   { id: "context", label: "context" },
@@ -59,9 +61,9 @@ const workflow: View[] = [
 ];
 
 const team = [
-  { name: "Noah Howard", role: "PM", url: "#" },
-  { name: "Adrian Thomas", role: "Engineering", url: "#" },
-  { name: "Brian Ramires", role: "Engineering", url: "#" },
+  { name: "Noah Howard", role: "PM", url: "https://www.linkedin.com/in/howard-noah/" },
+  { name: "Adrian Thomas", role: "Engineering", url: "https://www.linkedin.com/in/adrianth/" },
+  { name: "Bryan Ramires", role: "Engineering", url: "https://www.linkedin.com/in/bryanrg22/" },
 ];
 
 const kpis = [
@@ -98,7 +100,10 @@ export default function BasisPage() {
     <article>
       {/* ── HERO ─────────────────────────────────────── */}
       <Shell>
-        <div className="flex flex-col gap-8 pt-12 lg:flex-row lg:items-stretch">
+        <div className="pt-8">
+          <BackToWork accent={A} />
+        </div>
+        <div className="flex flex-col gap-8 pt-6 lg:flex-row lg:items-stretch">
           {/* details card */}
           <div className="w-full shrink-0 rounded-[--radius-panel] border border-grey-20 bg-grey-00 p-6 lg:w-[20rem]">
             <div className="flex items-center gap-3">
@@ -264,13 +269,10 @@ export default function BasisPage() {
                 The biggest constraint being:
               </p>
               <p className="mt-3 max-w-[54ch] text-body-lg leading-relaxed text-grey-90">
-                <mark
-                  className="rounded-[2px] px-1.5 py-0.5 font-medium text-grey-90"
-                  style={{ background: "rgba(53,101,77,0.14)" }}
-                >
+                <Mark tint={TINT}>
                   Every classification must be IRS-defensible, and a licensed
                   professional legally signs each study
-                </mark>
+                </Mark>
                 . AI cannot.
               </p>
 
@@ -328,12 +330,11 @@ export default function BasisPage() {
                 ))}
               </ul>
 
-              <p
-                className="mt-8 border-l-2 pl-4 text-body italic text-grey-60"
-                style={{ borderColor: A }}
-              >
-                Engineers needed to see that Basis made them better at their job,
-                not redundant.
+              <p className="mt-9 max-w-[52ch] text-body-lg leading-relaxed text-grey-90">
+                <Mark tint={TINT}>
+                  Engineers needed to see that Basis made them better at their job,
+                  not redundant.
+                </Mark>
               </p>
             </section>
 
@@ -438,6 +439,11 @@ export default function BasisPage() {
                 traceable asset classifications, built for engineers at small and
                 mid-size firms. Three decisions carry the whole product.
               </p>
+              <p className="mt-5 max-w-[52ch] text-body-lg leading-relaxed text-grey-90">
+                <Mark tint={TINT}>
+                  Every classification traces back to the document it came from.
+                </Mark>
+              </p>
 
               <div className="mt-10 space-y-14">
                 <div className="group grid items-center gap-8 md:grid-cols-2">
@@ -536,6 +542,7 @@ export default function BasisPage() {
         flight="SE561"
         title="Process intelligence for banks, and an AI skill for the whole firm"
         accent="var(--color-blue)"
+        logo="/media/synechron/logo.webp"
       />
     </article>
   );

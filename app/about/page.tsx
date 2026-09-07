@@ -52,16 +52,16 @@ export default function AboutPage() {
               Hi! I&apos;m Shreya Shanmugam.
             </h2>
             <p className="mt-3 text-body-lg text-grey-60">{site.tagline}</p>
-            <p className="mt-4 max-w-[56ch] text-body text-grey-40">
-              At a high level, here&apos;s where I&apos;ve been, where I am, and
-              where I&apos;m going.
-            </p>
           </div>
           <Headshot />
         </div>
 
-        {/* three stops */}
-        <ul className="mt-10 grid gap-4 md:grid-cols-3">
+        {/* three stops, introduced by the line that frames them */}
+        <p className="mt-12 max-w-[56ch] text-body-lg text-grey-60">
+          At a high level, here&apos;s where I&apos;ve been, where I am, and where
+          I&apos;m going.
+        </p>
+        <ul className="mt-5 grid gap-4 md:grid-cols-3">
           {stops.map((s) => (
             <li
               key={s.n}
@@ -83,9 +83,9 @@ export default function AboutPage() {
 
       {/* map */}
       <section className="container-content pt-16">
-        <h3 className="text-section font-semibold text-grey-90">
+        <p className="max-w-[56ch] text-body-lg text-grey-60">
           More specifically, this is my map.
-        </h3>
+        </p>
         <div className="mt-6">
           <TravelMap />
         </div>
