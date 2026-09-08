@@ -173,8 +173,10 @@ export default function BasisPage() {
           {/* cover, with the numbers sitting directly under it */}
           <div className="flex min-w-0 flex-1 flex-col gap-4">
             <Figure
-              src={`${M}/banner.webp`}
-              ratio="16/9"
+              src={`${M}/banner.mp4`}
+              video
+              poster={`${M}/banner-poster.webp`}
+              ratio="1500/844"
               label="Basis"
               accent={A}
             />

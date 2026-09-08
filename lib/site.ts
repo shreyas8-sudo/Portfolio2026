@@ -95,7 +95,8 @@ export const caseStudies: CaseStudy[] = [
     year: "2025",
     accent: "var(--color-basis)",
     cover: {
-      poster: "/media/basis/banner.webp",
+      poster: "/media/basis/banner-poster.webp",
+      video: "/media/basis/banner.mp4",
     },
   },
 ];
