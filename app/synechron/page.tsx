@@ -279,7 +279,7 @@ export default function SynechronPage() {
               src={`${M}/banner.mp4`}
               video
               poster={`${M}/banner-poster.webp`}
-              ratio="16/9"
+              ratio="1500/938"
               label="Synechron"
               accent={A}
             />
