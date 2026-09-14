@@ -2,6 +2,8 @@ import type { Metadata } from "next";
 import TravelMap from "@/components/TravelMap";
 import TheRecord from "@/components/TheRecord";
 import Headshot from "@/components/Headshot";
+import PageIn from "@/components/PageIn";
+import Settle from "@/components/Settle";
 import { site } from "@/lib/site";
 
 export const metadata: Metadata = {
@@ -33,7 +35,7 @@ const stops = [
 
 export default function AboutPage() {
   return (
-    <>
+    <PageIn>
       {/* intro + headshot */}
       <section className="container-content pt-16">
         <div className="flex items-center gap-4">
@@ -46,25 +48,33 @@ export default function AboutPage() {
           <span className="h-px flex-1 bg-grey-20" aria-hidden="true" />
         </div>
 
-        <div className="mt-8 flex flex-col items-start gap-10 md:flex-row md:items-center">
-          <div className="flex-1">
+        <div className="mt-8 flex flex-col items-stretch gap-10 md:flex-row md:items-center">
+          <Settle delay={0.04} className="flex-1">
             <h2 className="text-title font-semibold text-grey-90">
               Hi! I&apos;m Shreya Shanmugam.
             </h2>
             <p className="mt-3 text-body-lg text-grey-60">{site.tagline}</p>
-          </div>
-          <Headshot />
+          </Settle>
+          <Settle delay={0.12} className="shrink-0">
+            <Headshot />
+          </Settle>
         </div>
 
         {/* three stops, introduced by the line that frames them */}
-        <p className="mt-12 max-w-[56ch] text-body-lg text-grey-60">
-          At a high level, here&apos;s where I&apos;ve been, where I am, and where
-          I&apos;m going.
-        </p>
+        <Settle delay={0.2}>
+          <p className="mt-12 max-w-[56ch] text-body-lg text-grey-60">
+            At a high level, here&apos;s where I&apos;ve been, where I am, and
+            where I&apos;m going.
+          </p>
+        </Settle>
+        {/* the cards land last, one after another, left to right */}
         <ul className="mt-5 grid gap-4 md:grid-cols-3">
-          {stops.map((s) => (
-            <li
+          {stops.map((s, i) => (
+            <Settle
               key={s.n}
+              as="li"
+              delay={0.28 + i * 0.07}
+              distance={14}
               className="group rounded-[--radius-card] border border-grey-20 bg-grey-00 px-5 py-5 transition-colors duration-300 hover:border-grey-40"
             >
               <div className="flex items-center gap-2.5">
@@ -76,7 +86,7 @@ export default function AboutPage() {
               <p className="mt-2.5 text-caption leading-relaxed text-grey-60 transition-colors duration-300 group-hover:text-grey-90">
                 {s.body}
               </p>
-            </li>
+            </Settle>
           ))}
         </ul>
       </section>
@@ -104,6 +114,6 @@ export default function AboutPage() {
         </div>
         <TheRecord />
       </section>
-    </>
+    </PageIn>
   );
 }

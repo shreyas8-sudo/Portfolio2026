@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { site, waypoints, type Waypoint } from "@/lib/site";
 import Plane from "./Plane";
@@ -14,20 +14,40 @@ const COLOR: Record<Waypoint["color"], string> = {
   blue: "var(--color-blue)",
 };
 
-/* dots sit wide apart, framing the centred name */
+/* Dots sit wide apart, framing the centred name.
+   On a phone there is no width to frame anything with, so they move out of
+   the text band entirely (roughly 38% to 64%) and sit above and below it. */
 const ANCHOR: Record<Waypoint["position"], { x: number; y: number }> = {
   left: { x: 10, y: 42 },
   bottom: { x: 50, y: 86 },
   right: { x: 90, y: 26 },
 };
 
+const ANCHOR_SM: Record<Waypoint["position"], { x: number; y: number }> = {
+  left: { x: 50, y: 24 },
+  bottom: { x: 28, y: 80 },
+  right: { x: 76, y: 73 },
+};
+
 /* plane rests tucked just above the name */
 const REST = { x: 50, y: 27 };
+const REST_SM = { x: 50, y: 9 };
 
 export default function Hero() {
   const [active, setActive] = useState<string | null>(null);
+  const [narrow, setNarrow] = useState(false);
+
+  useEffect(() => {
+    const mq = window.matchMedia("(max-width: 639px)");
+    const sync = () => setNarrow(mq.matches);
+    sync();
+    mq.addEventListener("change", sync);
+    return () => mq.removeEventListener("change", sync);
+  }, []);
+
+  const anchors = narrow ? ANCHOR_SM : ANCHOR;
   const current = waypoints.find((w) => w.id === active) ?? null;
-  const planeAt = current ? ANCHOR[current.position] : REST;
+  const planeAt = current ? anchors[current.position] : narrow ? REST_SM : REST;
 
   return (
     <section className="hero-sky relative w-full overflow-hidden">
@@ -36,12 +56,12 @@ export default function Hero() {
         {/* plane */}
         <motion.div
           className="pointer-events-none absolute z-10"
-          initial={{ left: "-12%", top: `${REST.y}%`, opacity: 0 }}
+          initial={{ left: "-12%", top: `${planeAt.y}%`, opacity: 0 }}
           animate={{ left: `${planeAt.x}%`, top: `${planeAt.y}%`, opacity: 1 }}
           transition={{ type: "spring", stiffness: 48, damping: 17, mass: 1 }}
           style={{ translate: "-50% -50%" }}
         >
-          <Plane width={132} climb={-18} />
+          <Plane width={narrow ? 88 : 132} climb={-18} />
         </motion.div>
 
         {/* centred name block */}
@@ -64,7 +84,7 @@ export default function Hero() {
 
         {/* nudge toward the dots, bottom left */}
         <p
-          className={`absolute bottom-8 left-0 z-30 text-caption italic text-grey-40 transition-opacity duration-500 ${
+          className={`absolute bottom-8 left-6 z-30 text-caption italic text-grey-40 transition-opacity duration-500 md:left-10 ${
             active ? "opacity-0" : "opacity-100"
           }`}
         >
@@ -73,7 +93,7 @@ export default function Hero() {
 
         {/* waypoint dots, numbered */}
         {waypoints.map((w, i) => {
-          const pos = ANCHOR[w.position];
+          const pos = anchors[w.position];
           const isActive = active === w.id;
           return (
             <motion.button
@@ -130,10 +150,12 @@ export default function Hero() {
               animate={{ opacity: 1, y: 0 }}
               exit={{ opacity: 0, y: -3 }}
               transition={{ duration: 0.2, ease: "easeOut" }}
-              className="absolute z-30 whitespace-nowrap text-caption text-grey-60"
+              /* chip, not bare text: the sky washes drift underneath it and a
+                 grey caption on a moving gradient is a coin toss to read */
+              className="absolute z-30 max-w-[12rem] rounded-[--radius-tag] bg-grey-00/80 px-2.5 py-1 text-center text-caption text-grey-90 shadow-[0_1px_6px_rgba(19,28,51,0.07)] backdrop-blur-sm sm:max-w-none sm:whitespace-nowrap"
               style={{
-                left: `${ANCHOR[current.position].x}%`,
-                top: `calc(${ANCHOR[current.position].y}% + 22px)`,
+                left: `${anchors[current.position].x}%`,
+                top: `calc(${anchors[current.position].y}% + 22px)`,
                 translate: "-50% 0",
               }}
             >

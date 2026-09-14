@@ -1,6 +1,6 @@
 "use client";
 
-import { useRef, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import type { Layover } from "@/lib/site";
 import Arrow from "./Arrow";
@@ -31,7 +31,14 @@ function Thumb({ item, active }: { item: Layover; active: boolean }) {
           muted
           loop
           playsInline
-          preload="none"
+          /* see CaseCover: "none" leaves the loop without a duration on the
+             first hover, and the clip plays through once and stops */
+          preload="metadata"
+          onEnded={(e) => {
+            if (!active) return;
+            e.currentTarget.currentTime = 0;
+            e.currentTarget.play().catch(() => {});
+          }}
           className="size-full object-cover"
         />
       ) : !noImg ? (
@@ -54,6 +61,20 @@ function Thumb({ item, active }: { item: Layover; active: boolean }) {
 
 export default function LayoverGrid({ items }: { items: Layover[] }) {
   const [active, setActive] = useState<string | null>(null);
+  /**
+   * On touch, a card that is also a link means a tap can only ever do one
+   * thing, and the blurb never gets read. So the card opens itself, and the
+   * link is its own control inside. Hover devices keep the whole card live.
+   */
+  const [touch, setTouch] = useState(false);
+
+  useEffect(() => {
+    const mq = window.matchMedia("(hover: none)");
+    const sync = () => setTouch(mq.matches);
+    sync();
+    mq.addEventListener("change", sync);
+    return () => mq.removeEventListener("change", sync);
+  }, []);
 
   return (
     <ul className="mt-10 grid gap-5 sm:grid-cols-2 lg:grid-cols-3">
@@ -99,15 +120,29 @@ export default function LayoverGrid({ items }: { items: Layover[] }) {
                     <p className="mt-2 text-caption text-grey-60">
                       {item.blurb}
                     </p>
-                    {item.link && (
-                      <span
-                        className="arrow-link mt-3"
-                        style={{ color: "var(--color-blue)" }}
-                      >
-                        <span>{item.link.label}</span>
-                        <Arrow color="var(--color-blue)" />
-                      </span>
-                    )}
+                    {item.link &&
+                      (touch ? (
+                        /* the only thing on the card that navigates */
+                        <a
+                          href={item.link.href}
+                          target="_blank"
+                          rel="noreferrer"
+                          onClick={(e) => e.stopPropagation()}
+                          className="arrow-link mt-3 inline-flex rounded-[--radius-tag] border border-grey-20 px-3 py-1.5"
+                          style={{ color: "var(--color-blue)" }}
+                        >
+                          <span>{item.link.label}</span>
+                          <Arrow color="var(--color-blue)" />
+                        </a>
+                      ) : (
+                        <span
+                          className="arrow-link mt-3"
+                          style={{ color: "var(--color-blue)" }}
+                        >
+                          <span>{item.link.label}</span>
+                          <Arrow color="var(--color-blue)" />
+                        </span>
+                      ))}
                   </motion.div>
                 )}
               </AnimatePresence>
@@ -129,33 +164,28 @@ export default function LayoverGrid({ items }: { items: Layover[] }) {
             onFocus={() => setActive(item.name)}
             onBlur={() => setActive(null)}
           >
-            {href ? (
-              <a
-                href={href}
-                target="_blank"
-                rel="noreferrer"
-                className={shell}
-                /* tapping on touch devices: first tap reveals, second opens */
-                onClick={(e) => {
-                  if (
-                    window.matchMedia("(hover: none)").matches &&
-                    active !== item.name
-                  ) {
-                    e.preventDefault();
-                    setActive(item.name);
-                  }
-                }}
-              >
+            {href && !touch ? (
+              <a href={href} target="_blank" rel="noreferrer" className={shell}>
                 {Card}
               </a>
             ) : (
-              <button
-                type="button"
+              /* a div rather than a button, because on touch this one has a
+                 real link nested inside it and a button may not contain one */
+              <div
+                role="button"
+                tabIndex={0}
+                aria-expanded={isOn}
                 onClick={() => setActive(isOn ? null : item.name)}
-                className={shell}
+                onKeyDown={(e) => {
+                  if (e.key === "Enter" || e.key === " ") {
+                    e.preventDefault();
+                    setActive(isOn ? null : item.name);
+                  }
+                }}
+                className={`${shell} cursor-pointer`}
               >
                 {Card}
-              </button>
+              </div>
             )}
           </li>
         );

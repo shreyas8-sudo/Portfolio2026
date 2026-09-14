@@ -27,7 +27,10 @@ export default function SectionHead({
       </h2>
 
       {takeaway && (
-        <p className="mt-5 max-w-[34ch] text-sub font-semibold text-grey-90 md:text-section">
+        /* no measure cap: at this size the column is about 54 characters a
+           line, which a display heading carries fine, and a narrow heading
+           over full-width body text read as two different grids. */
+        <p className="mt-5 text-sub font-semibold text-grey-90 md:text-section">
           {takeaway}
         </p>
       )}

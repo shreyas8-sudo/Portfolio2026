@@ -33,8 +33,10 @@ export default function CaseCard({ study }: { study: CaseStudy }) {
         playing={hover}
       />
 
-      <div className="px-6 py-5">
-        <div className="flex flex-wrap items-center gap-4">
+      <div className="px-5 py-5 sm:px-6">
+        {/* one line at every width: the origin tag is the first thing to go,
+            since the case study itself says who the work was for */}
+        <div className="flex items-center gap-3 sm:gap-4">
           <span className="dot-code text-[13px] text-grey-90">{study.code}</span>
           <span className="dot-code text-[13px]" style={{ color: study.accent }}>
             {study.flight}
@@ -42,7 +44,7 @@ export default function CaseCard({ study }: { study: CaseStudy }) {
 
           <span className="ml-auto flex items-center gap-2">
             <span
-              className="flex items-center gap-1.5 rounded-[--radius-tag] border px-2 py-[3px]"
+              className="hidden items-center gap-1.5 rounded-[--radius-tag] border px-2 py-[3px] sm:flex"
               style={{ borderColor: study.accent }}
             >
               <span className="label" style={{ color: study.accent }}>
@@ -50,17 +52,17 @@ export default function CaseCard({ study }: { study: CaseStudy }) {
               </span>
             </span>
             <span
-              className="flex items-center gap-1.5 rounded-[--radius-tag] px-2 py-[3px]"
+              className="flex shrink-0 items-center gap-1.5 rounded-[--radius-tag] px-2 py-[3px]"
               style={{ background: "var(--color-orange)" }}
             >
-              <span className="label text-white">
+              <span className="label whitespace-nowrap text-white">
                 ✈ {study.status} {study.year}
               </span>
             </span>
           </span>
         </div>
 
-        <h3 className="mt-2.5 text-sub font-semibold text-grey-90">
+        <h3 className="mt-2.5 text-[1.125rem] font-semibold leading-snug text-grey-90 sm:text-sub">
           {study.title}
         </h3>
         <p className="mt-2 max-w-[62ch] text-caption text-grey-60">

@@ -164,7 +164,7 @@ export default function ContactPass({
             </div>
 
             <div className="mt-1 flex items-center justify-between">
-              <span className="label text-grey-40">hyderabad</span>
+              <span className="label text-grey-40">LA, US</span>
               <span className="label text-grey-40">destination tbd</span>
             </div>
           </div>

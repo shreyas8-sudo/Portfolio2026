@@ -71,18 +71,23 @@ export function NextFlight({
       href={href}
       className="group mt-16 block border-t border-grey-20 bg-grey-05 py-10"
     >
-      <div className="container-content flex items-center gap-6">
+      {/* On a phone this stacks: mark, then the name of where you're going.
+          The plane goes, because at this width it is the widest thing in the
+          row and it is the only thing in it carrying no information. */}
+      <div className="container-content flex items-start gap-4 sm:items-center sm:gap-6">
         {logo && (
           // eslint-disable-next-line @next/next/no-img-element
           <img
             src={logo}
             alt=""
-            className="size-12 shrink-0 object-contain transition-transform duration-300 group-hover:scale-105"
+            className="size-10 shrink-0 object-contain transition-transform duration-300 group-hover:scale-105 sm:size-12"
           />
         )}
-        <div className="flex-1">
+        <div className="min-w-0 flex-1">
           <p className="label text-grey-40">Next flight</p>
-          <p className="mt-1.5 text-sub font-medium text-grey-90">{title}</p>
+          <p className="mt-1.5 text-[1.0625rem] font-medium leading-snug text-grey-90 sm:text-sub">
+            {title}
+          </p>
           <p className="mt-1.5 flex items-center gap-2.5">
             <span className="dot-code text-[13px] text-grey-60">{code}</span>
             <span className="dot-code text-[13px]" style={{ color: accent }}>
@@ -90,11 +95,11 @@ export function NextFlight({
             </span>
           </p>
         </div>
-        <span className="transition-transform duration-300 group-hover:translate-x-1">
+        <span className="hidden transition-transform duration-300 group-hover:translate-x-1 lg:block">
           <Plane width={64} climb={-18} />
         </span>
         <span
-          className="text-2xl transition-transform duration-300 group-hover:translate-x-1 group-hover:-translate-y-1"
+          className="shrink-0 text-2xl transition-transform duration-300 group-hover:translate-x-1 group-hover:-translate-y-1"
           style={{ color: accent }}
           aria-hidden="true"
         >

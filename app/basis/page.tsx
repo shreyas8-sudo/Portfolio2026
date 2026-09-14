@@ -7,6 +7,8 @@ import HoverFigure from "@/components/case/HoverFigure";
 import Takeaways from "@/components/case/Takeaways";
 import Mark from "@/components/case/Mark";
 import ContactButton from "@/components/ContactButton";
+import PageIn from "@/components/PageIn";
+import Settle from "@/components/Settle";
 import { BackToWork, NextFlight } from "@/components/case/CaseChrome";
 
 export const metadata: Metadata = {
@@ -44,6 +46,8 @@ const workflow: View[] = [
       { n: "08", name: "Report generation", note: "Manually compile the client deliverable.", severity: "pain", pain: "Fully manual, no structured output" },
       { n: "09", name: "Sign-off and delivery", note: "Licensed professional signs and delivers.", severity: "friction", pain: "AI legally cannot do this" },
     ],
+    /* steps 04 to 08: every painful step except the one a license has to sign */
+    solves: { from: 3, to: 7, note: "where Basis sits" },
   },
   {
     id: "classification",
@@ -97,6 +101,7 @@ function Shell({ children }: { children: React.ReactNode }) {
 
 export default function BasisPage() {
   return (
+    <PageIn>
     <article>
       {/* ── HERO ─────────────────────────────────────── */}
       <Shell>
@@ -105,7 +110,8 @@ export default function BasisPage() {
         </div>
         <div className="flex flex-col gap-8 pt-6 lg:flex-row lg:items-stretch">
           {/* details card */}
-          <div className="w-full shrink-0 rounded-[--radius-panel] border border-grey-20 bg-grey-00 p-6 lg:w-[20rem]">
+          <Settle delay={0.06} className="w-full shrink-0 lg:w-[20rem]">
+          <div className="h-full rounded-[--radius-panel] border border-grey-20 bg-grey-00 p-6">
             <div className="flex items-center gap-3">
               {/* eslint-disable-next-line @next/next/no-img-element */}
               <img
@@ -139,7 +145,7 @@ export default function BasisPage() {
               <div>
                 <dt className="label text-grey-40">Timeline</dt>
                 <dd className="mt-1 text-caption text-grey-90">
-                  Fall 2025 · 10 weeks · LavaLab
+                  Fall 2025 · 10 weeks
                 </dd>
               </div>
               <div>
@@ -169,9 +175,10 @@ export default function BasisPage() {
               </div>
             </dl>
           </div>
+          </Settle>
 
           {/* cover, with the numbers sitting directly under it */}
-          <div className="flex min-w-0 flex-1 flex-col gap-4">
+          <Settle delay={0.15} className="flex min-w-0 flex-1 flex-col gap-4">
             <Figure
               src={`${M}/banner.mp4`}
               video
@@ -198,7 +205,7 @@ export default function BasisPage() {
                 </li>
               ))}
             </ul>
-          </div>
+          </Settle>
         </div>
       </Shell>
 
@@ -215,7 +222,7 @@ export default function BasisPage() {
                 takeaway="Ten weeks to find a problem and solve it."
                 accent={A}
               />
-              <p className="mt-4 max-w-[68ch] text-body text-grey-60">
+              <p className="mt-3 text-body text-grey-60">
                 That is the entire brief at LavaLab, USC&apos;s student startup
                 incubator. A co-founder&apos;s parent worked in cost segregation,
                 which gave us a direct line to people who do the work every day.
@@ -230,7 +237,7 @@ export default function BasisPage() {
                 takeaway="A niche tax loophole, an aging workforce, and outdated systems."
                 accent={A}
               />
-              <p className="mt-4 max-w-[68ch] text-body text-grey-60">
+              <p className="mt-3 text-body text-grey-60">
                 Cost segregation only applies in the U.S., and the specialists who
                 do it are retiring with no pipeline behind them. Which leaves the
                 cost of a single study sitting where it is:
@@ -264,10 +271,14 @@ export default function BasisPage() {
               </ul>
 
               <div className="mt-10">
-                <WorkflowDiagram views={workflow} accent={A} />
+                <WorkflowDiagram
+                  views={workflow}
+                  accent={A}
+                  logo={`${M}/logo.webp`}
+                />
               </div>
 
-              <p className="mt-10 text-body text-grey-60">
+              <p className="mt-8 text-body text-grey-60">
                 The biggest constraint being:
               </p>
               <p className="mt-3 max-w-[54ch] text-body-lg leading-relaxed text-grey-90">
@@ -293,7 +304,7 @@ export default function BasisPage() {
                 takeaway="We didn't know the intricacies. The people who did told us we had it wrong."
                 accent={A}
               />
-              <p className="mt-4 max-w-[68ch] text-body text-grey-60">
+              <p className="mt-3 text-body text-grey-60">
                 So we asked nearly everyone in the workflow: retired specialists,
                 engineers, photo organizers, sales leads, firm CEOs. Three
                 findings rebuilt the product.
@@ -332,7 +343,7 @@ export default function BasisPage() {
                 ))}
               </ul>
 
-              <p className="mt-9 max-w-[52ch] text-body-lg leading-relaxed text-grey-90">
+              <p className="mt-7 max-w-[52ch] text-body-lg leading-relaxed text-grey-90">
                 <Mark tint={TINT}>
                   Engineers needed to see that Basis made them better at their job,
                   not redundant.
@@ -347,7 +358,7 @@ export default function BasisPage() {
                 takeaway="Design wasn't done in Figma. We prototyped fast, tested, and broke our own assumptions."
                 accent={A}
               />
-              <p className="mt-4 max-w-[68ch] text-body text-grey-60">
+              <p className="mt-3 text-body text-grey-60">
                 Four versions in six weeks. Each one was built, put in front of
                 real engineers, and broken in ways we did not expect. Two features
                 took the most rework.
@@ -360,7 +371,9 @@ export default function BasisPage() {
                 <p className="mt-2 max-w-[64ch] text-body text-grey-60 transition-colors duration-300 group-hover:text-grey-90">
                   From a flat file list to an annotatable image workspace.
                 </p>
-                <div className="mt-6 grid gap-5 md:grid-cols-3">
+                {/* two up on a phone: one screen per row made the version
+                    story a scroll rather than a comparison */}
+                <div className="mt-6 grid grid-cols-2 gap-3 sm:gap-5 md:grid-cols-3">
                   <Figure
                     src={`${M}/f1v1.webp`}
                     ratio="4/3"
@@ -393,7 +406,7 @@ export default function BasisPage() {
                 <p className="mt-2 max-w-[64ch] text-body text-grey-60 transition-colors duration-300 group-hover:text-grey-90">
                   From one asset at a time to a full verification workspace.
                 </p>
-                <div className="mt-6 grid gap-5 sm:grid-cols-2 lg:grid-cols-4">
+                <div className="mt-6 grid grid-cols-2 gap-3 sm:gap-5 lg:grid-cols-4">
                   <Figure
                     src={`${M}/f2v1.webp`}
                     ratio="4/3"
@@ -436,57 +449,60 @@ export default function BasisPage() {
                 takeaway="AI does the sorting. The engineer keeps the judgment, and stays visibly in charge."
                 accent={A}
               />
-              <p className="mt-4 max-w-[68ch] text-body text-grey-60">
+              <p className="mt-3 text-body text-grey-60">
                 Basis analyzes property documents and generates structured,
                 traceable asset classifications, built for engineers at small and
                 mid-size firms. Three decisions carry the whole product.
               </p>
-              <p className="mt-5 max-w-[52ch] text-body-lg leading-relaxed text-grey-90">
+              <p className="mt-4 max-w-[52ch] text-body-lg leading-relaxed text-grey-90">
                 <Mark tint={TINT}>
                   Every classification traces back to the document it came from.
                 </Mark>
               </p>
 
-              <div className="mt-10 space-y-14">
-                <div className="group grid items-center gap-8 md:grid-cols-2">
-                  <div>
-                    <h3 className="text-sub font-medium text-grey-90">
-                      Human in the loop
-                    </h3>
-                    <p className="mt-2.5 text-body text-grey-60 transition-colors duration-300 group-hover:text-grey-90">
-                      Review, override, and approval checkpoints at every stage.
-                      The engineer is always the final authority, visibly.
-                    </p>
+              {/* Two columns from md up, alternating sides so three blocks in a
+                  row don't march. Below md there is only one column, so it
+                  stacks: heading, sentence, then the video. */}
+              <div className="mt-10 space-y-12 md:space-y-14">
+                {[
+                  {
+                    head: "Human in the loop",
+                    body: "Review, override, and approval checkpoints at every stage. The engineer is always the final authority, visibly.",
+                    src: "sol1.mp4",
+                  },
+                  {
+                    head: "One view for everything",
+                    body: "Photos, appraisals, sketches, and IRS references in a single interface. No more validating one decision across four tools.",
+                    src: "sol2.mp4",
+                    flip: true,
+                  },
+                  {
+                    head: "Automate the redundant",
+                    body: "Extraction, room classification, evidence organization. AI takes the sorting, engineers keep the judgment.",
+                    src: "sol3.mp4",
+                  },
+                ].map((d) => (
+                  <div
+                    key={d.head}
+                    className="group grid items-center gap-6 md:grid-cols-2 md:gap-8"
+                  >
+                    <div className={d.flip ? "md:order-last" : undefined}>
+                      <h3 className="text-sub font-medium text-grey-90">
+                        {d.head}
+                      </h3>
+                      <p className="mt-2.5 text-body text-grey-60 transition-colors duration-300 group-hover:text-grey-90">
+                        {d.body}
+                      </p>
+                    </div>
+                    <Figure
+                      src={`${M}/${d.src}`}
+                      video
+                      ratio="12/7"
+                      contain
+                      accent={A}
+                    />
                   </div>
-                  <Figure src={`${M}/sol1.mp4`} video ratio="12/7" contain accent={A} />
-                </div>
-
-                <div className="group grid items-center gap-8 md:grid-cols-2">
-                  <Figure src={`${M}/sol2.mp4`} video ratio="12/7" contain accent={A} />
-                  <div className="md:order-first">
-                    <h3 className="text-sub font-medium text-grey-90">
-                      One view for everything
-                    </h3>
-                    <p className="mt-2.5 text-body text-grey-60 transition-colors duration-300 group-hover:text-grey-90">
-                      Photos, appraisals, sketches, and IRS references in a single
-                      interface. No more validating one decision across four
-                      tools.
-                    </p>
-                  </div>
-                </div>
-
-                <div className="group grid items-center gap-8 md:grid-cols-2">
-                  <div>
-                    <h3 className="text-sub font-medium text-grey-90">
-                      Automate the redundant
-                    </h3>
-                    <p className="mt-2.5 text-body text-grey-60 transition-colors duration-300 group-hover:text-grey-90">
-                      Extraction, room classification, evidence organization. AI
-                      takes the sorting, engineers keep the judgment.
-                    </p>
-                  </div>
-                  <Figure src={`${M}/sol3.mp4`} video ratio="12/7" contain accent={A} />
-                </div>
+                ))}
               </div>
             </section>
 
@@ -547,5 +563,6 @@ export default function BasisPage() {
         logo="/media/synechron/logo.webp"
       />
     </article>
+    </PageIn>
   );
 }

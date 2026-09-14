@@ -35,7 +35,7 @@ export default function TrackBanner({
         </h2>
       )}
       <p
-        className={`max-w-[52ch] text-grey-60 ${
+        className={`text-grey-60 ${
           title ? "mt-2.5 text-body-lg" : "mt-3 text-section font-semibold tracking-[-0.02em] text-grey-90"
         }`}
       >

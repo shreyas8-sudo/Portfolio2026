@@ -46,7 +46,7 @@ export default function Home() {
         </p>
 
         <ul className="mt-7 grid grid-cols-2 gap-4 md:grid-cols-4">
-          {preview.map((item) => {
+          {preview.map((item, i) => {
             const card = (
               <>
                 <div className="aspect-[16/9] overflow-hidden bg-grey-05">
@@ -83,7 +83,11 @@ export default function Home() {
               "group block overflow-hidden rounded-[--radius-card] border border-grey-20 bg-grey-00 transition-shadow duration-300 hover:shadow-[0_4px_16px_rgba(0,0,0,0.05)]";
 
             return (
-              <li key={item.name}>
+              /* two on a phone, four once there's a row to put them in */
+              <li
+                key={item.name}
+                className={i > 1 ? "hidden md:block" : undefined}
+              >
                 {item.link ? (
                   <a
                     href={item.link.href}

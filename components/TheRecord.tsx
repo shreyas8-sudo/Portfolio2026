@@ -38,8 +38,8 @@ const work: Row[] = [
 const school: Row[] = [
   {
     year: "2025-27",
-    org: "USC",
-    role: "B.S. Business Administration · Minor, Designing for Digital Experiences",
+    org: "University of Southern California",
+    role: "B.S. in Business (Finance), Marshall School of Business · Minor in Designing for Digital Experiences, Iovine and Young Academy",
   },
   {
     year: "2023-24",
@@ -55,10 +55,10 @@ const tools = [
       "Figma",
       "Figma Make",
       "Figma Motion",
+      "Figma Agents",
       "Framer",
       "Adobe Suite",
       "Claude Design",
-      "Google Maps API",
     ],
   },
   {
@@ -67,6 +67,9 @@ const tools = [
       "HTML",
       "CSS",
       "JavaScript",
+      "React",
+      "Next.js",
+      "Google Maps API",
       "Git",
       "Claude Code",
       "Cursor",
@@ -120,7 +123,7 @@ function Rows({ rows }: { rows: Row[] }) {
           <span className="dot-code w-20 shrink-0 text-[13px] text-grey-40">
             {r.year}
           </span>
-          <span className="w-full shrink-0 text-caption font-medium text-grey-90 sm:w-56">
+          <span className="w-full shrink-0 text-caption font-medium text-grey-90 sm:w-60">
             {r.org}
           </span>
           <span className="flex-1 text-caption text-grey-60 transition-colors duration-300 group-hover:text-grey-90">

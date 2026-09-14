@@ -30,7 +30,7 @@ const SITE_URL = "https://shreyashanmugam.com";
 export const metadata: Metadata = {
   metadataBase: new URL(SITE_URL),
   title: {
-    default: "Shreya Shanmugam, product designer",
+    default: "Shreya Shanmugam",
     template: "%s, Shreya Shanmugam",
   },
   description:

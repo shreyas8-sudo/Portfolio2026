@@ -13,7 +13,9 @@ export default function Takeaways({
   items: [string, string][];
   accent: string;
 }) {
-  const [open, setOpen] = useState<number | null>(0);
+  /* all closed on arrival: the headings are the section, and opening one
+     should be the reader's decision, not a default we made for them. */
+  const [open, setOpen] = useState<number | null>(null);
 
   return (
     <ul className="mt-7 border-t border-grey-10">

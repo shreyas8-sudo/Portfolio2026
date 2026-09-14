@@ -16,19 +16,24 @@ export default function Settle({
   delay = 0,
   distance = 18,
   className,
+  as = "div",
 }: {
   children: React.ReactNode;
   delay?: number;
   /** how far above its resting place it starts */
   distance?: number;
   className?: string;
+  /** so a settling element can still be a list item where one belongs */
+  as?: "div" | "li";
 }) {
   const still = useReducedMotion();
+  const Tag = as === "li" ? motion.li : motion.div;
+  const Plain = as === "li" ? "li" : "div";
 
-  if (still) return <div className={className}>{children}</div>;
+  if (still) return <Plain className={className}>{children}</Plain>;
 
   return (
-    <motion.div
+    <Tag
       className={className}
       initial={{ opacity: 0, y: -distance }}
       animate={{ opacity: 1, y: 0 }}
@@ -42,6 +47,6 @@ export default function Settle({
       }}
     >
       {children}
-    </motion.div>
+    </Tag>
   );
 }

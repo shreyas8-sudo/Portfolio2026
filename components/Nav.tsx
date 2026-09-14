@@ -24,7 +24,7 @@ export default function Nav() {
     <>
       <header className="sticky top-0 z-40 w-full">
         <nav className="w-full bg-grey-00/75 backdrop-blur-md">
-          <div className="relative flex w-full items-center justify-between px-6 py-4 md:px-10">
+          <div className="relative flex w-full items-center justify-between px-5 py-4 sm:px-6 md:px-10">
             <Link href="/" aria-label="Home" className="shrink-0">
               <Logo size={38} />
             </Link>
@@ -34,7 +34,7 @@ export default function Nav() {
               <Clocks dot={1.5} gap={0.75} />
             </div>
 
-            <ul className="flex items-center gap-8">
+            <ul className="flex items-center gap-5 sm:gap-8">
               {navLinks.map((link) => {
                 const active = pathname.startsWith(link.href);
 

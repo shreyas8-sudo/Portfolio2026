@@ -52,6 +52,10 @@ export default function TravelMap() {
   const drag = useRef<{ x: number; y: number; ox: number; oy: number } | null>(
     null
   );
+  /** every finger currently down, so one-finger pan and two-finger pinch
+      can hand off to each other without the map jumping */
+  const pointers = useRef(new Map<number, { x: number; y: number }>());
+  const pinch = useRef<{ dist: number; ux: number; uy: number } | null>(null);
 
   const { pathD, graticuleD, project } = useMemo(() => {
     const projection = geoNaturalEarth1().fitExtent(
@@ -73,16 +77,59 @@ export default function TravelMap() {
     };
   }, []);
 
-  /* keep the map from being dragged off-screen */
-  const clamp = useCallback((v: View): View => {
-    const maxX = (W * (v.k - 1)) / 2;
-    const maxY = (H * (v.k - 1)) / 2;
-    return {
-      k: v.k,
-      x: Math.max(-maxX, Math.min(maxX, v.x)),
-      y: Math.max(-maxY, Math.min(maxY, v.y)),
-    };
+  /**
+   * What the viewport is actually showing, in user units.
+   *
+   * On a phone the frame is portrait while the map is landscape, so the svg
+   * is set to `slice` and crops the sides. Everything downstream, clamping,
+   * wheel, pinch and drag, has to work off the visible window rather than
+   * off W and H, or the map fights the finger by the width of the crop.
+   */
+  const metrics = useCallback(() => {
+    const el = svgRef.current;
+    const rect = el?.getBoundingClientRect();
+    if (!rect || !rect.width || !rect.height) {
+      return { scale: 1, vw: W, vh: H, ox: 0, oy: 0, rect: null };
+    }
+    const scale = Math.max(rect.width / W, rect.height / H); // slice
+    const vw = rect.width / scale;
+    const vh = rect.height / scale;
+    return { scale, vw, vh, ox: (W - vw) / 2, oy: (H - vh) / 2, rect };
   }, []);
+
+  /** pointer position in the svg's own coordinates */
+  const toUser = useCallback(
+    (clientX: number, clientY: number) => {
+      const m = metrics();
+      if (!m.rect) return [W / 2, H / 2] as const;
+      return [
+        m.ox + (clientX - m.rect.left) / m.scale,
+        m.oy + (clientY - m.rect.top) / m.scale,
+      ] as const;
+    },
+    [metrics]
+  );
+
+  /* keep the map covering the frame, never dragged off it */
+  const clamp = useCallback(
+    (v: View): View => {
+      const { vw, vh, ox, oy } = metrics();
+      const lo = (origin: number, extent: number, size: number) => {
+        const min = origin + extent - size * v.k;
+        const max = origin;
+        // if the map is smaller than the window, centre it instead of clamping
+        return min > max ? (min + max) / 2 : { min, max };
+      };
+      const cx = lo(ox, vw, W);
+      const cy = lo(oy, vh, H);
+      return {
+        k: v.k,
+        x: typeof cx === "number" ? cx : Math.max(cx.min, Math.min(cx.max, v.x)),
+        y: typeof cy === "number" ? cy : Math.max(cy.min, Math.min(cy.max, v.y)),
+      };
+    },
+    [metrics]
+  );
 
   const zoomBy = useCallback(
     (factor: number, cx = W / 2, cy = H / 2) => {
@@ -105,20 +152,25 @@ export default function TravelMap() {
     if (!el) return;
     const onWheel = (e: WheelEvent) => {
       e.preventDefault();
-      const rect = el.getBoundingClientRect();
-      const cx = ((e.clientX - rect.left) / rect.width) * W;
-      const cy = ((e.clientY - rect.top) / rect.height) * H;
+      const [cx, cy] = toUser(e.clientX, e.clientY);
       zoomBy(e.deltaY < 0 ? 1.12 : 1 / 1.12, cx, cy);
     };
     el.addEventListener("wheel", onWheel, { passive: false });
     return () => el.removeEventListener("wheel", onWheel);
-  }, [zoomBy]);
+  }, [zoomBy, toUser]);
 
-  /* Drag starts here but is tracked on the window.
+  /* Gestures start here but are tracked on the window.
      Pointer capture on an SVG child breaks the moment a zoom re-render
      replaces that child, which is what made zoom-then-drag throw. */
   const onPointerDown = (e: React.PointerEvent) => {
-    drag.current = { x: e.clientX, y: e.clientY, ox: view.x, oy: view.y };
+    pointers.current.set(e.pointerId, { x: e.clientX, y: e.clientY });
+    if (pointers.current.size === 1) {
+      drag.current = { x: e.clientX, y: e.clientY, ox: view.x, oy: view.y };
+      pinch.current = null;
+    } else if (pointers.current.size === 2) {
+      drag.current = null;
+      pinch.current = null; // measured on the first move, once both are settled
+    }
     setDragging(true);
   };
 
@@ -126,20 +178,55 @@ export default function TravelMap() {
     if (!dragging) return;
 
     const move = (e: PointerEvent) => {
-      const el = svgRef.current;
-      /* snapshot the origin. setView's updater runs after this function
-         returns, and by then a pointerup may already have nulled the ref. */
+      if (!pointers.current.has(e.pointerId)) return;
+      pointers.current.set(e.pointerId, { x: e.clientX, y: e.clientY });
+
+      /* two fingers: pinch to zoom about the midpoint between them */
+      if (pointers.current.size >= 2) {
+        const [a, b] = [...pointers.current.values()];
+        const dist = Math.hypot(b.x - a.x, b.y - a.y);
+        const mid = { x: (a.x + b.x) / 2, y: (a.y + b.y) / 2 };
+        const p = pinch.current;
+        if (!p || dist < 1) {
+          const [ux, uy] = toUser(mid.x, mid.y);
+          pinch.current = { dist, ux, uy };
+          return;
+        }
+        const factor = dist / p.dist;
+        if (Math.abs(factor - 1) < 0.005) return;
+        pinch.current = { ...p, dist };
+        zoomBy(factor, p.ux, p.uy);
+        return;
+      }
+
+      /* one finger: pan. Snapshot the origin first, because setView's updater
+         runs after this function returns, by which time a pointerup may
+         already have nulled the ref. */
       const d = drag.current;
-      if (!d || !el) return;
-      const rect = el.getBoundingClientRect();
-      const dx = ((e.clientX - d.x) / rect.width) * W;
-      const dy = ((e.clientY - d.y) / rect.height) * H;
+      const { scale } = metrics();
+      if (!d) return;
+      const dx = (e.clientX - d.x) / scale;
+      const dy = (e.clientY - d.y) / scale;
       setView((v) => clamp({ k: v.k, x: d.ox + dx, y: d.oy + dy }));
     };
 
-    const up = () => {
-      drag.current = null;
-      setDragging(false);
+    const up = (e: PointerEvent) => {
+      pointers.current.delete(e.pointerId);
+      pinch.current = null;
+      if (pointers.current.size === 1) {
+        /* lifted one of two: re-base the pan on the finger still down,
+           so the map doesn't jump to wherever the drag started */
+        const [only] = [...pointers.current.values()];
+        setView((v) => {
+          drag.current = { x: only.x, y: only.y, ox: v.x, oy: v.y };
+          return v;
+        });
+        return;
+      }
+      if (pointers.current.size === 0) {
+        drag.current = null;
+        setDragging(false);
+      }
     };
 
     window.addEventListener("pointermove", move);
@@ -150,9 +237,31 @@ export default function TravelMap() {
       window.removeEventListener("pointerup", up);
       window.removeEventListener("pointercancel", up);
     };
-  }, [dragging, clamp]);
+  }, [dragging, clamp, metrics, toUser, zoomBy]);
 
-  const reset = () => setView({ k: 1, x: 0, y: 0 });
+  /**
+   * A phone gets a squarer frame, which crops the world badly at k=1, so it
+   * opens on North America instead. Most of the pins are there, and the rest
+   * are a drag away. On desktop nothing changes: the whole world, unzoomed.
+   */
+  const home = useCallback((): View => {
+    const narrow =
+      typeof window !== "undefined" &&
+      window.matchMedia("(max-width: 767px)").matches;
+    if (!narrow) return { k: 1, x: 0, y: 0 };
+    const xy = project(-96, 42);
+    if (!xy) return { k: 1, x: 0, y: 0 };
+    const k = 2.1;
+    return { k, x: W / 2 - xy[0] * k, y: H / 2 - xy[1] * k };
+  }, [project]);
+
+  useEffect(() => {
+    setView(clamp(home()));
+    // once, on mount: after this the view belongs to whoever is dragging it
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
+
+  const reset = () => setView(clamp(home()));
 
   /* clicking a pin centres it */
   const focus = (p: Place) => {
@@ -174,13 +283,14 @@ export default function TravelMap() {
     <div className="overflow-hidden rounded-[--radius-panel] border border-grey-20 bg-gradient-to-br from-[#0f1626] via-[#16203a] to-[#22314f]">
       <div className="grid grid-cols-1 gap-0 md:grid-cols-[2.5fr_1fr]">
         {/* map */}
-        <div className="relative p-5">
-          <p className="label pointer-events-none absolute left-6 top-5 z-10 text-[var(--color-peri)]">
+        <div className="relative p-3 md:p-5">
+          <p className="label pointer-events-none absolute left-6 top-5 z-10 hidden text-[var(--color-peri)] md:block">
             Every pin is somewhere I&apos;ve been since 2023
           </p>
 
-          {/* zoom controls */}
-          <div className="absolute right-5 top-5 z-10 flex flex-col gap-1.5">
+          {/* zoom controls. Top left on a phone, because the top right is
+              where the window seat sits once you've tapped a pin. */}
+          <div className="absolute left-4 top-4 z-20 flex flex-col gap-1.5 md:left-auto md:right-5 md:top-5">
             <button onClick={() => zoomBy(1.4)} className={btn} aria-label="Zoom in">
               <svg width="11" height="11" viewBox="0 0 12 12" fill="none">
                 <path d="M6 1v10M1 6h10" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" />
@@ -208,7 +318,9 @@ export default function TravelMap() {
           <svg
             ref={svgRef}
             viewBox={`0 0 ${W} ${H}`}
-            className={`w-full touch-none select-none ${
+            /* portrait frames crop the sides rather than shrinking the map */
+            preserveAspectRatio="xMidYMid slice"
+            className={`aspect-square w-full touch-none select-none sm:aspect-[3/2] md:aspect-auto ${
               dragging ? "cursor-grabbing" : "cursor-grab"
             }`}
             role="img"
@@ -300,7 +412,7 @@ export default function TravelMap() {
             </g>
           </svg>
 
-          <div className="pointer-events-none absolute bottom-5 left-6 flex items-center gap-4">
+          <div className="pointer-events-none absolute bottom-5 left-6 hidden items-center gap-4 md:flex">
             <span className="label text-white/30">
               {places.length} stops and counting
             </span>
@@ -320,89 +432,125 @@ export default function TravelMap() {
             </span>
           </div>
 
-          <p className="label pointer-events-none absolute bottom-5 right-6 text-white/25">
-            scroll to zoom · drag to pan
+          <p className="label pointer-events-none absolute bottom-4 left-4 text-white/25 md:bottom-5 md:left-auto md:right-6">
+            <span className="md:hidden">pinch to zoom · drag to pan</span>
+            <span className="hidden md:inline">scroll to zoom · drag to pan</span>
           </p>
+
+          {/* On a phone the seat rides in the corner of the map instead of
+              taking a row of its own, so the map keeps its full height. */}
+          <div className="absolute right-3 top-3 z-20 w-[42%] max-w-[10.5rem] md:hidden">
+            <Seat compact />
+          </div>
         </div>
 
         {/* panel, the window seat */}
-        <div className="flex flex-col items-center justify-center gap-4 border-t border-white/10 p-6 md:border-l md:border-t-0">
-          {selected ? (
-            <div className="w-full">
-              <Window>
-                <PlacePhoto
-                  key={photosOf(selected)[shot] ?? photosOf(selected)[0]}
-                  src={photosOf(selected)[shot] ?? photosOf(selected)[0]}
-                  alt={selected.name}
-                />
-              </Window>
-
-              {/* more than one shot of this place */}
-              {photosOf(selected).length > 1 && (
-                <div className="mt-3 flex justify-center gap-1.5">
-                  {photosOf(selected).map((src, i) => (
-                    <button
-                      key={src}
-                      onClick={() => setShot(i)}
-                      aria-label={`Photo ${i + 1}`}
-                      className={`size-10 overflow-hidden rounded-[3px] border transition-opacity ${
-                        i === shot
-                          ? "border-white/40 opacity-100"
-                          : "border-white/10 opacity-50 hover:opacity-80"
-                      }`}
-                    >
-                      {/* eslint-disable-next-line @next/next/no-img-element */}
-                      <img
-                        src={src}
-                        alt=""
-                        className="size-full object-cover"
-                        onError={(e) => {
-                          e.currentTarget.style.visibility = "hidden";
-                        }}
-                      />
-                    </button>
-                  ))}
-                </div>
-              )}
-              <p className="mt-4 flex flex-wrap items-center justify-center gap-2 text-center text-sub font-semibold text-white">
-                {selected.name}
-                {selected.home && (
-                  <span
-                    className="label rounded-[--radius-tag] px-1.5 py-0.5"
-                    style={{
-                      color: "var(--color-orange)",
-                      border: "1px solid var(--color-orange)",
-                    }}
-                  >
-                    lived here
-                  </span>
-                )}
-              </p>
-              <p
-                className="label mt-1 text-center"
-                style={{ color: "var(--color-marigold)" }}
-              >
-                {selected.date} · {Math.abs(selected.lat).toFixed(1)}°
-                {selected.lat >= 0 ? "N" : "S"}{" "}
-                {Math.abs(selected.lon).toFixed(1)}°
-                {selected.lon >= 0 ? "E" : "W"}
-              </p>
-              {selected.caption && (
-                <p className="mt-2 text-center text-caption text-white/60">
-                  {selected.caption}
-                </p>
-              )}
-            </div>
-          ) : (
-            /* empty state, an empty window seat, blue sky outside */
-            <Window>
-              <div className="grid size-full place-items-center">
-                <span className="label text-white/90">Click on any pin!</span>
-              </div>
-            </Window>
-          )}
+        <div className="hidden flex-col items-center justify-center gap-4 border-white/10 p-6 md:flex md:border-l">
+          <Seat />
         </div>
       </div>
     </div>
   );
+
+  /** The window seat. Full size beside the map, a corner thumbnail over it. */
+  function Seat({ compact = false }: { compact?: boolean }) {
+    if (!selected) {
+      return (
+        <Window>
+          <div className="grid size-full place-items-center">
+            <span
+              className={`label text-white/90 ${compact ? "text-center text-[9px] leading-tight" : ""}`}
+            >
+              {compact ? "Tap a pin" : "Click on any pin!"}
+            </span>
+          </div>
+        </Window>
+      );
+    }
+
+    const shots = photosOf(selected);
+
+    return (
+      <div className="w-full">
+        <Window>
+          <PlacePhoto
+            key={shots[shot] ?? shots[0]}
+            src={shots[shot] ?? shots[0]}
+            alt={selected.name}
+          />
+        </Window>
+
+        {/* more than one shot of this place */}
+        {shots.length > 1 && (
+          <div
+            className={`flex justify-center ${compact ? "mt-1.5 gap-1" : "mt-3 gap-1.5"}`}
+          >
+            {shots.map((src, i) => (
+              <button
+                key={src}
+                onClick={() => setShot(i)}
+                aria-label={`Photo ${i + 1}`}
+                className={`overflow-hidden rounded-[3px] border transition-opacity ${
+                  compact ? "size-5" : "size-10"
+                } ${
+                  i === shot
+                    ? "border-white/40 opacity-100"
+                    : "border-white/10 opacity-50 hover:opacity-80"
+                }`}
+              >
+                {/* eslint-disable-next-line @next/next/no-img-element */}
+                <img
+                  src={src}
+                  alt=""
+                  className="size-full object-cover"
+                  onError={(e) => {
+                    e.currentTarget.style.visibility = "hidden";
+                  }}
+                />
+              </button>
+            ))}
+          </div>
+        )}
+
+        <p
+          className={`flex flex-wrap items-center justify-center gap-2 text-center font-semibold text-white ${
+            compact ? "mt-2 text-[13px] leading-tight" : "mt-4 text-sub"
+          }`}
+        >
+          {selected.name}
+          {selected.home && !compact && (
+            <span
+              className="label rounded-[--radius-tag] px-1.5 py-0.5"
+              style={{
+                color: "var(--color-orange)",
+                border: "1px solid var(--color-orange)",
+              }}
+            >
+              lived here
+            </span>
+          )}
+        </p>
+        <p
+          className="label mt-1 text-center"
+          style={{ color: "var(--color-marigold)" }}
+        >
+          {compact ? (
+            selected.date
+          ) : (
+            <>
+              {selected.date} · {Math.abs(selected.lat).toFixed(1)}°
+              {selected.lat >= 0 ? "N" : "S"}{" "}
+              {Math.abs(selected.lon).toFixed(1)}°
+              {selected.lon >= 0 ? "E" : "W"}
+            </>
+          )}
+        </p>
+        {selected.caption && !compact && (
+          <p className="mt-2 text-center text-caption text-white/60">
+            {selected.caption}
+          </p>
+        )}
+      </div>
+    );
+  }
 }

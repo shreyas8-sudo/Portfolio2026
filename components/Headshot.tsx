@@ -23,7 +23,8 @@ export default function Headshot() {
   const [missing, setMissing] = useState(false);
 
   return (
-    <div className="relative w-full max-w-[13rem] shrink-0">
+    /* centred on a phone, where it stacks under the name; left of it on desktop */
+    <div className="relative mx-auto w-full max-w-[13rem] shrink-0 md:mx-0">
       <Corners />
       <div className="grid aspect-square w-full place-items-center overflow-hidden bg-gradient-to-b from-[#dfe5ee] to-[#eceeef]">
         {!missing ? (

@@ -27,16 +27,37 @@ export default function CaseCover({
 }) {
   const ref = useRef<HTMLVideoElement>(null);
   const [hasMedia, setHasMedia] = useState(true);
+  /* below desktop there is no hover to reveal the loop with, so it just runs */
+  const [always, setAlways] = useState(false);
+
+  useEffect(() => {
+    const mq = window.matchMedia("(max-width: 1023px), (hover: none)");
+    const sync = () => setAlways(mq.matches);
+    sync();
+    mq.addEventListener("change", sync);
+    return () => mq.removeEventListener("change", sync);
+  }, []);
 
   useEffect(() => {
     const v = ref.current;
     if (!v || !hasMedia || !video) return;
-    if (playing) v.play().catch(() => {});
+    if (playing || always) v.play().catch(() => {});
     else {
       v.pause();
       v.currentTime = 0;
     }
-  }, [playing, hasMedia, video]);
+  }, [playing, always, hasMedia, video]);
+
+  /* Belt and braces on top of the loop attribute. With preload="none" the
+     first hover starts playback while the file is still streaming, and a
+     browser that reaches the end without a known duration fires `ended`
+     instead of looping. Restart it ourselves if that happens. */
+  const onEnded = () => {
+    const v = ref.current;
+    if (!v || !(playing || always)) return;
+    v.currentTime = 0;
+    v.play().catch(() => {});
+  };
 
   return (
     <div className="relative aspect-[16/9] overflow-hidden bg-grey-05">
@@ -47,7 +68,11 @@ export default function CaseCover({
           muted
           loop
           playsInline
-          preload="none"
+          autoPlay={always}
+          /* metadata, not none: the duration has to be known before the first
+             hover or the loop has nothing to loop against */
+          preload={always ? "auto" : "metadata"}
+          onEnded={onEnded}
           onError={() => setHasMedia(false)}
           className="size-full object-cover transition-transform duration-500 group-hover:scale-[1.015]"
         >

@@ -22,7 +22,16 @@ export type Step = {
   pain?: string;
 };
 
-export type View = { id: string; label: string; heading?: string; steps: Step[] };
+/** Which run of steps the product actually takes on, bracketed under the track. */
+export type Solves = { from: number; to: number; note: string };
+
+export type View = {
+  id: string;
+  label: string;
+  heading?: string;
+  steps: Step[];
+  solves?: Solves;
+};
 
 /* tuned against the site palette, not lifted from a stock chart library */
 const TONE: Record<Severity, { fill: string; line: string; ink: string; word: string }> = {
@@ -65,23 +74,34 @@ function Arrow() {
   );
 }
 
-function Card({ s }: { s: Step }) {
+function Card({
+  s,
+  cardRef,
+}: {
+  s: Step;
+  cardRef?: (el: HTMLLIElement | null) => void;
+}) {
   const t = TONE[s.severity];
 
   return (
-    <li className="flex w-[13.5rem] shrink-0 flex-col gap-2 sm:w-[12.5rem]">
+    <li
+      ref={cardRef}
+      /* narrower on a phone: three cards' worth of scroll to see nine steps
+         is a lot of swiping, and the type holds up fine at this width */
+      className="flex w-[10.5rem] shrink-0 flex-col gap-2 sm:w-[12.5rem] sm:gap-2.5"
+    >
       <div
-        className="flex min-h-[9.5rem] flex-col rounded-[--radius-card] border p-3.5"
+        className="flex min-h-[8.25rem] flex-col rounded-[--radius-panel] border-[1.5px] p-3 sm:min-h-[9.5rem] sm:p-4"
         style={{ background: t.fill, borderColor: t.line }}
       >
-        <span className="dot-code text-[11px]" style={{ color: t.ink }}>
+        <span className="dot-code text-[10px] sm:text-[11px]" style={{ color: t.ink }}>
           {s.n}
         </span>
-        <p className="mt-1.5 text-caption font-semibold leading-snug text-grey-90">
+        <p className="mt-1.5 text-[0.875rem] font-semibold leading-snug tracking-[-0.01em] text-grey-90 sm:text-[0.9375rem]">
           {s.name}
         </p>
         {s.note && (
-          <p className="mt-1.5 text-[12.5px] leading-snug text-grey-60">
+          <p className="mt-1.5 text-[11.5px] leading-snug text-grey-60 sm:text-[13px]">
             {s.note}
           </p>
         )}
@@ -90,7 +110,7 @@ function Card({ s }: { s: Step }) {
       {/* the pain chip, the reason this diagram exists */}
       {s.pain ? (
         <p
-          className="flex items-start gap-1.5 rounded-[--radius-sharp] border px-2.5 py-2 text-[11.5px] leading-snug"
+          className="flex items-start gap-1.5 rounded-[--radius-card] border px-2.5 py-2 text-[11px] leading-snug sm:px-3 sm:py-2.5 sm:text-[12px]"
           style={{
             background: TONE.pain.fill,
             borderColor: TONE.pain.line,
@@ -103,7 +123,7 @@ function Card({ s }: { s: Step }) {
           {s.pain}
         </p>
       ) : (
-        <span className="hidden sm:block sm:h-[2.6rem]" aria-hidden="true" />
+        <span className="hidden sm:block sm:h-[3rem]" aria-hidden="true" />
       )}
     </li>
   );
@@ -112,9 +132,12 @@ function Card({ s }: { s: Step }) {
 export default function WorkflowDiagram({
   views,
   accent,
+  logo,
 }: {
   views: View[];
   accent: string;
+  /** the product's mark, dropped under the steps it takes on */
+  logo?: string;
 }) {
   const [active, setActive] = useState(views[0].id);
   const view = views.find((v) => v.id === active) ?? views[0];
@@ -122,6 +145,31 @@ export default function WorkflowDiagram({
   /* the track scrolls sideways, so it has to say so */
   const track = useRef<HTMLDivElement>(null);
   const [edge, setEdge] = useState({ left: false, right: false });
+
+  /* the bracket has to line up with real cards, so it is measured rather
+     than guessed from a column count that changes with the breakpoint. */
+  const cards = useRef<(HTMLLIElement | null)[]>([]);
+  const [span, setSpan] = useState<{ left: number; width: number } | null>(null);
+
+  const measureSpan = useCallback(() => {
+    const s = view.solves;
+    if (!s) return setSpan(null);
+    const a = cards.current[s.from];
+    const b = cards.current[s.to];
+    if (!a || !b) return setSpan(null);
+    setSpan({
+      left: a.offsetLeft,
+      width: b.offsetLeft + b.offsetWidth - a.offsetLeft,
+    });
+  }, [view]);
+
+  useEffect(() => {
+    measureSpan();
+    const ro = new ResizeObserver(measureSpan);
+    const el = track.current;
+    if (el) ro.observe(el);
+    return () => ro.disconnect();
+  }, [measureSpan]);
 
   const measure = useCallback(() => {
     const el = track.current;
@@ -152,7 +200,7 @@ export default function WorkflowDiagram({
                   key={v.id}
                   onClick={() => setActive(v.id)}
                   aria-pressed={on}
-                  className="rounded-[--radius-pill] px-4 py-2 text-caption font-medium transition-colors duration-200"
+                  className="rounded-[--radius-pill] px-3.5 py-1.5 text-[13px] font-medium transition-colors duration-200 sm:px-4 sm:py-2 sm:text-caption"
                   style={{
                     background: on ? accent : "transparent",
                     color: on ? "#fff" : "var(--color-grey-60)",
@@ -182,29 +230,60 @@ export default function WorkflowDiagram({
           onScroll={measure}
           className="-mx-6 overflow-x-auto px-6 pb-3 md:-mx-10 md:px-10"
         >
-          <ol className="flex items-start gap-2">
-            {view.steps.map((s, i) => (
-              <li key={s.n} className="contents">
-                <Card s={s} />
-                {i < view.steps.length - 1 && <Arrow />}
-              </li>
-            ))}
-          </ol>
+          <div className="relative w-max">
+            <ol className="flex items-start gap-2">
+              {view.steps.map((s, i) => (
+                <li key={s.n} className="contents">
+                  <Card
+                    s={s}
+                    cardRef={(el) => {
+                      cards.current[i] = el;
+                    }}
+                  />
+                  {i < view.steps.length - 1 && <Arrow />}
+                </li>
+              ))}
+            </ol>
+
+            {/* Where the product intervenes. A soft rule under the run of
+                steps, the mark centred beneath it. Deliberately quiet: the
+                cards are already loud, and a boxed callout here competed
+                with the pain chips right above it. */}
+            {view.solves && span && (
+              <div className="relative mt-4 h-[4.75rem]">
+                <div
+                  className="absolute top-0 flex flex-col items-center"
+                  style={{ left: span.left, width: span.width }}
+                >
+                  <span
+                    className="h-[2px] w-full rounded-full"
+                    style={{ background: "var(--color-basis-light)" }}
+                    aria-hidden="true"
+                  />
+                  <span className="mt-3 flex items-center gap-2 sm:mt-3.5 sm:gap-2.5">
+                    {logo && (
+                      // eslint-disable-next-line @next/next/no-img-element
+                      <img
+                        src={logo}
+                        alt=""
+                        className="size-7 shrink-0 object-contain sm:size-9"
+                      />
+                    )}
+                    <span className="label" style={{ color: accent }}>
+                      {view.solves.note}
+                    </span>
+                  </span>
+                </div>
+              </div>
+            )}
+          </div>
         </div>
 
-        {/* edge fades, so a cut-off card looks cut off on purpose */}
-        <span
-          aria-hidden="true"
-          className="pointer-events-none absolute inset-y-0 left-0 w-12 bg-gradient-to-r from-grey-00 to-transparent transition-opacity duration-200"
-          style={{ opacity: edge.left ? 1 : 0 }}
-        />
-        <span
-          aria-hidden="true"
-          className="pointer-events-none absolute inset-y-0 right-0 w-12 bg-gradient-to-l from-grey-00 to-transparent transition-opacity duration-200"
-          style={{ opacity: edge.right ? 1 : 0 }}
-        />
+        {/* No edge fades. They were meant to say "this scrolls", but a white
+            wash sitting on top of a card reads as a rendering fault, not as
+            an affordance. The label and the arrows below say it in words. */}
 
-        {/* and real controls, because a fade alone is easy to miss */}
+        {/* real controls, because a cut-off card alone is easy to miss */}
         {(edge.left || edge.right) && (
           <div className="mt-1 flex items-center justify-between">
             <span className="label text-grey-40">
@@ -236,7 +315,7 @@ export default function WorkflowDiagram({
       </div>
 
       {/* legend */}
-      <div className="mt-5 flex flex-wrap items-center justify-center gap-x-7 gap-y-2">
+      <div className="mt-6 flex flex-wrap items-center justify-center gap-x-7 gap-y-2">
         {(Object.keys(TONE) as Severity[]).map((k) => (
           <span key={k} className="flex items-center gap-2">
             <span

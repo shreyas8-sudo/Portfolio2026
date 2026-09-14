@@ -6,12 +6,13 @@ import TrackBanner from "@/components/case/TrackBanner";
 import ProcessVariance, { type Lane } from "@/components/case/ProcessVariance";
 import EventStitch from "@/components/case/EventStitch";
 import SpecFramework from "@/components/case/SpecFramework";
-import HoverSwap from "@/components/case/HoverSwap";
 import HoverFigure from "@/components/case/HoverFigure";
 import PositioningMap, { type Player } from "@/components/case/PositioningMap";
 import Takeaways from "@/components/case/Takeaways";
 import Mark from "@/components/case/Mark";
 import ContactButton from "@/components/ContactButton";
+import PageIn from "@/components/PageIn";
+import Settle from "@/components/Settle";
 import { BackToWork, NextFlight } from "@/components/case/CaseChrome";
 
 export const metadata: Metadata = {
@@ -194,7 +195,7 @@ const takeaways: [string, string][] = [
 
 const record = [
   ["Role", "UI/UX Product Design Intern · AI Engineer"],
-  ["Timeline", "Summer 2026 · 8 weeks · NYC"],
+  ["Timeline", "Summer 2026 · 8 weeks"],
   ["Skills", "Enterprise UX · UX research · prototyping · motion · spec writing"],
   ["Tools", "Figma · Claude Design · Figma Agents · Figma Motion"],
 ];
@@ -215,6 +216,7 @@ function Shell({ children }: { children: React.ReactNode }) {
 
 export default function SynechronPage() {
   return (
+    <PageIn>
     <article>
       {/* ── HERO ─────────────────────────────────────── */}
       <Shell>
@@ -222,7 +224,8 @@ export default function SynechronPage() {
           <BackToWork accent={A} />
         </div>
         <div className="flex flex-col gap-8 pt-6 lg:flex-row lg:items-stretch">
-          <div className="w-full shrink-0 rounded-[--radius-panel] border border-grey-20 bg-grey-00 p-6 lg:w-[20rem]">
+          <Settle delay={0.06} className="w-full shrink-0 lg:w-[20rem]">
+          <div className="h-full rounded-[--radius-panel] border border-grey-20 bg-grey-00 p-6">
             <div className="flex items-center gap-3">
               {/* eslint-disable-next-line @next/next/no-img-element */}
               <img
@@ -273,8 +276,9 @@ export default function SynechronPage() {
               </div>
             </dl>
           </div>
+          </Settle>
 
-          <div className="min-w-0 flex-1">
+          <Settle delay={0.15} className="min-w-0 flex-1">
             <Figure
               src={`${M}/banner.mp4`}
               video
@@ -296,7 +300,7 @@ export default function SynechronPage() {
                 In the other I flipped seats, and built the thing that helps
                 engineers work with AI.
               </p>
-              <p className="mt-5 max-w-[68ch] text-body text-grey-60">
+              <p className="mt-4 text-body text-grey-60">
                 Synechron is a digital consulting firm specializing in financial
                 services. Its pitch to banks runs through FinLabs, a collection of
                 frameworks the firm implements inside client organizations. My
@@ -304,7 +308,7 @@ export default function SynechronPage() {
                 framework to ship.
               </p>
             </div>
-          </div>
+          </Settle>
         </div>
       </Shell>
 
@@ -329,12 +333,12 @@ export default function SynechronPage() {
                 takeaway="A bank runs thousands of processes a day, and no one can say what they actually are."
                 accent={A}
               />
-              <p className="mt-4 max-w-[68ch] text-body text-grey-60">
+              <p className="mt-3 text-body text-grey-60">
                 Those processes run across hundreds of systems that do not talk to
                 each other, and every one of them exists in variations that keep
                 changing by country, by regulation, by team.
               </p>
-              <p className="mt-4 max-w-[68ch] text-body text-grey-60">
+              <p className="mt-3 text-body text-grey-60">
                 Documenting them today means asking people to write down what they
                 remember. At bank scale, that is thousands of people.
               </p>
@@ -363,7 +367,7 @@ export default function SynechronPage() {
                 takeaway="Read the event logs the systems already write, and never touch the data."
                 accent={A}
               />
-              <p className="mt-4 max-w-[68ch] text-body text-grey-60">
+              <p className="mt-3 text-body text-grey-60">
                 Every system already writes an event log, and the Case ID inside
                 it stays constant. So instead of asking anyone, the platform
                 connects read-only, reads Case ID plus timestamp plus event, and
@@ -381,12 +385,12 @@ export default function SynechronPage() {
               <h3 className="mt-12 text-sub font-medium text-grey-90">
                 Where it stops, on purpose
               </h3>
-              <p className="mt-2.5 max-w-[68ch] text-body text-grey-60">
+              <p className="mt-2.5 text-body text-grey-60">
                 When the output is evidence for a regulator, a person makes the
                 call, not a black box. The platform produces bottleneck reports,
                 control gaps and audit packages, and humans act on them.
               </p>
-              <p className="mt-5 max-w-[52ch] text-body-lg leading-relaxed text-grey-90">
+              <p className="mt-4 max-w-[52ch] text-body-lg leading-relaxed text-grey-90">
                 <Mark tint={TINT}>It documents and flags. It never executes.</Mark>
               </p>
             </section>
@@ -464,14 +468,14 @@ export default function SynechronPage() {
                   </li>
                 ))}
               </ol>
-              <p className="mt-4 max-w-[68ch] text-body text-grey-60">
+              <p className="mt-3 text-body text-grey-60">
                 You cannot define goals before you know who you are building for.
               </p>
 
               <h3 className="mt-12 text-sub font-medium text-grey-90">
                 The competitive map
               </h3>
-              <p className="mt-2.5 max-w-[68ch] text-body text-grey-60">
+              <p className="mt-2.5 text-body text-grey-60">
                 Celonis and IBM sell to any industry. Pega and Appian automate
                 processes you already understand. Nobody was building for one
                 specific client type, a bank, and for the processes nobody has
@@ -500,7 +504,7 @@ export default function SynechronPage() {
                 takeaway="Two features got rebuilt, and neither final version was the prettiest one."
                 accent={A}
               />
-              <p className="mt-4 max-w-[68ch] text-body text-grey-60">
+              <p className="mt-3 text-body text-grey-60">
                 The process map and the variations view are the two screens the
                 platform is judged on, so they took the most rework.
               </p>
@@ -570,13 +574,13 @@ export default function SynechronPage() {
               <h3 className="mt-16 text-sub font-medium text-grey-90">
                 The fine print
               </h3>
-              <p className="mt-2.5 max-w-[68ch] text-body text-grey-60">
+              <p className="mt-2.5 text-body text-grey-60">
                 This was scoped as a front-end prototype to be used in sales
                 pitches to clients, so there were no end users in the loop. The
                 feedback cycle ran through my manager, domain research and
                 competitive benchmarks instead.
               </p>
-              <p className="mt-4 max-w-[68ch] text-body text-grey-60">
+              <p className="mt-3 text-body text-grey-60">
                 Branding stayed deliberately minimal, because client branding
                 would overwrite it anyway. Naming that scope is part of the work.
               </p>
@@ -596,18 +600,18 @@ export default function SynechronPage() {
                 takeaway="This one wasn't assigned. I went and asked for it."
                 accent={A}
               />
-              <p className="mt-4 max-w-[68ch] text-body text-grey-60">
+              <p className="mt-3 text-body text-grey-60">
                 I went to leadership on the AI side and asked where else I could
                 learn and be useful, because I was curious and wanted more than my
                 lane. They threw ten directions at me.
               </p>
-              <p className="mt-4 max-w-[68ch] text-body text-grey-60">
+              <p className="mt-3 text-body text-grey-60">
                 We landed on spec-driven development.
               </p>
 
               {/* say plainly what a spec is, and what I actually built */}
               <div
-                className="mt-6 max-w-[68ch] rounded-[--radius-card] border-l-2 py-1 pl-5"
+                className="mt-6 rounded-[--radius-card] border-l-2 py-1 pl-5"
                 style={{ borderColor: A }}
               >
                 <p className="text-body text-grey-60">
@@ -671,7 +675,7 @@ export default function SynechronPage() {
                 takeaway="It passed enterprise GitHub on attempt four, on my first real Git workflow."
                 accent={A}
               />
-              <p className="mt-4 max-w-[68ch] text-body text-grey-60">
+              <p className="mt-3 text-body text-grey-60">
                 I took Anthropic&apos;s courses on the domain, drafted the skill
                 with Claude, and benchmarked it against existing specs. Then two
                 rounds against real projects: feedback, changes, retest.
@@ -689,25 +693,23 @@ export default function SynechronPage() {
               <h3 className="mt-14 text-sub font-medium text-grey-90">
                 Enterprise GitHub, the part nobody warns you about
               </h3>
-              <p className="mt-2.5 max-w-[68ch] text-body text-grey-60">
+              <p className="mt-2.5 text-body text-grey-60">
                 Contribution guidelines, automated review, formatting gates, on my
                 first-ever real Git workflow. It passed on attempt four.
               </p>
-              <p className="mt-5 max-w-[52ch] text-body-lg leading-relaxed text-grey-90">
+              <p className="mt-4 max-w-[52ch] text-body-lg leading-relaxed text-grey-90">
                 <Mark tint={TINT}>
                   The skill now lives in Synechron&apos;s enterprise repo, used by
                   engineers across the firm.
                 </Mark>
               </p>
               <div className="mt-6">
-                <HoverSwap
-                  a={`${M}/github1.webp`}
-                  b={`${M}/github2.webp`}
-                  alt="The pull request passing enterprise review"
-                  hint="hover"
+                <Figure
+                  src={`${M}/github2.webp`}
                   label="Merged"
                   caption="Contribution guidelines, automated review and formatting gates, cleared on attempt four."
                   ratio="16/9"
+                  top
                   accent={A}
                 />
               </div>
@@ -759,5 +761,6 @@ export default function SynechronPage() {
         logo="/media/basis/logo.webp"
       />
     </article>
+    </PageIn>
   );
 }
