@@ -10,16 +10,16 @@ function Thumb({ item, active }: { item: Layover; active: boolean }) {
   const [noImg, setNoImg] = useState(false);
   const vid = useRef<HTMLVideoElement>(null);
 
-  if (item.video) {
+  useEffect(() => {
+    if (!item.video) return;
     const v = vid.current;
-    if (v) {
-      if (active) v.play().catch(() => {});
-      else {
-        v.pause();
-        v.currentTime = 0;
-      }
+    if (!v) return;
+    if (active) v.play().catch(() => {});
+    else {
+      v.pause();
+      v.currentTime = 0;
     }
-  }
+  }, [active, item.video]);
 
   return (
     <div className="relative aspect-[16/9] w-full overflow-hidden bg-grey-05">
