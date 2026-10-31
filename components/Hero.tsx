@@ -1,11 +1,21 @@
 "use client";
 
 import { useEffect, useState } from "react";
+import Link from "next/link";
 import { motion, AnimatePresence } from "framer-motion";
 import { dur, ease } from "@/lib/motion";
 import { site, waypoints, type Waypoint } from "@/lib/site";
 import Plane from "./Plane";
 import Settle from "./Settle";
+
+function IntroLink({ href, children }: { href: string; children: React.ReactNode }) {
+  const cls =
+    "text-grey-90 underline decoration-grey-90/60 underline-offset-2 transition-colors duration-[--dur-quick] ease-[--ease-fade] hover:text-[--color-blue] hover:decoration-[--color-blue]";
+  if (href.startsWith("#") || href.startsWith("http")) {
+    return <a href={href} className={cls}>{children}</a>;
+  }
+  return <Link href={href} className={cls}>{children}</Link>;
+}
 
 /* pin colours, brighter, and marigold swapped for orange so the
    numbers inside stay legible against white */
@@ -68,17 +78,29 @@ export default function Hero() {
         {/* centred name block */}
         <div className="relative z-20 flex h-full flex-col items-center justify-center text-center">
           <Settle delay={0.05}>
-            <h1 className="text-[clamp(2.25rem,5.2vw,3.5rem)] font-semibold leading-[1.05] tracking-[-0.03em] text-grey-90">
+            <h1 className="text-[34px] font-semibold leading-[1.05] tracking-[-0.03em] text-grey-90 sm:text-[64px]">
               {site.name}.
             </h1>
           </Settle>
 
-          {/* the tagline carries the hero now. sized off the viewport so it always
-              holds one line, never breaking mid-thought */}
           <Settle delay={0.16} distance={14}>
-            <p className="mt-5 max-w-[22ch] text-balance text-[clamp(1.15rem,3.15vw,1.6rem)] font-medium leading-[1.3] tracking-[-0.015em] text-grey-60 sm:max-w-none sm:whitespace-nowrap">
+            <p className="mt-5 text-body-lg text-grey-60">
               Designing to make complex systems feel{" "}
               <span style={{ color: "var(--color-blue)" }}>simple</span>.
+            </p>
+          </Settle>
+
+          <Settle delay={0.26} distance={12}>
+            <p className="mt-[18px] max-w-[36ch] text-body text-grey-60 sm:max-w-none">
+              Product designer at{" "}
+              <IntroLink href="/about">USC Iovine and Young Academy</IntroLink>
+              {" "}and{" "}
+              <IntroLink href="/about">Marshall</IntroLink>.
+              <br className="hidden sm:block" />
+              {" "}Consulting for{" "}
+              <IntroLink href="#disney">Disney Experiences</IntroLink>
+              {" "}with ProductSC, previously at{" "}
+              <IntroLink href="#synechron">Synechron</IntroLink>.
             </p>
           </Settle>
         </div>

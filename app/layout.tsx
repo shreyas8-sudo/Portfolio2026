@@ -34,7 +34,7 @@ export const metadata: Metadata = {
     template: "%s, Shreya Shanmugam",
   },
   description:
-    "Product designer making complex systems feel simple. Studying at USC, consulting for Disney Experiences with ProductSC, previously at Synechron and co-founder at Basis.",
+    "Product designer at USC Iovine and Young Academy and Marshall. Consulting for Disney Experiences with ProductSC, previously at Synechron.",
   openGraph: {
     title: "Shreya Shanmugam, product designer",
     description: "Product designer making complex systems feel simple.",
