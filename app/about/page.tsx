@@ -75,7 +75,7 @@ export default function AboutPage() {
               as="li"
               delay={0.28 + i * 0.07}
               distance={14}
-              className="group rounded-[--radius-card] border border-grey-20 bg-grey-00 px-5 py-5 transition-colors duration-300 hover:border-grey-40"
+              className="group border border-grey-20 bg-grey-00 px-5 py-5 transition-colors duration-[--dur-base] ease-[--ease-fade] hover:border-grey-40"
             >
               <div className="flex items-center gap-2.5">
                 <span className="dot-code text-[13px]" style={{ color: s.color }}>
@@ -83,7 +83,7 @@ export default function AboutPage() {
                 </span>
                 <span className="label text-grey-40">{s.head}</span>
               </div>
-              <p className="mt-2.5 text-caption leading-relaxed text-grey-60 transition-colors duration-300 group-hover:text-grey-90">
+              <p className="mt-2.5 text-caption leading-relaxed text-grey-60 transition-colors duration-[--dur-base] group-hover:text-grey-90">
                 {s.body}
               </p>
             </Settle>

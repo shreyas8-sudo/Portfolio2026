@@ -22,7 +22,7 @@ export default function ContactButton({
   return (
     <button
       onClick={openContact}
-      className="rounded-[--radius-sharp] px-5 py-3 text-caption font-medium text-white transition-opacity duration-200 hover:opacity-90"
+      className="px-5 py-3 text-caption font-medium text-white transition-opacity duration-[--dur-quick] hover:opacity-90"
       style={{ background: accent }}
     >
       {children}

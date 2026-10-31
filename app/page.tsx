@@ -54,7 +54,7 @@ export default function Home() {
                   <img
                     src={item.thumb}
                     alt={item.name}
-                    className="size-full object-cover object-top transition-transform duration-500 group-hover:scale-[1.03]"
+                    className="size-full object-cover object-top transition-transform duration-[--dur-slow] ease-[--ease-move] group-hover:scale-[1.02]"
                   />
                 </div>
                 <div className="px-4 py-3.5">
@@ -80,7 +80,7 @@ export default function Home() {
             );
 
             const shell =
-              "group block overflow-hidden rounded-[--radius-card] border border-grey-20 bg-grey-00 transition-shadow duration-300 hover:shadow-[0_4px_16px_rgba(0,0,0,0.05)]";
+              "group block overflow-hidden border border-grey-20 bg-grey-00 transition-[transform,box-shadow,border-color] duration-[--dur-base] ease-[--ease-move] hover:-translate-y-[3px] hover:border-grey-40 hover:shadow-[0_2px_8px_rgba(19,28,51,0.05)]";
 
             return (
               /* two on a phone, four once there's a row to put them in */

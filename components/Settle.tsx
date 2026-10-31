@@ -1,6 +1,7 @@
 "use client";
 
 import { motion, useReducedMotion } from "framer-motion";
+import { spring, dur, ease } from "@/lib/motion";
 
 /**
  * Elements drop in and settle, once, on load.
@@ -38,12 +39,9 @@ export default function Settle({
       initial={{ opacity: 0, y: -distance }}
       animate={{ opacity: 1, y: 0 }}
       transition={{
-        type: "spring",
-        stiffness: 420,
-        damping: 26, // just under critical, so it overshoots once and settles
-        mass: 0.9,
+        ...spring.settle,
         delay,
-        opacity: { duration: 0.28, delay, ease: "easeOut" },
+        opacity: { duration: dur.base, delay, ease: ease.fade },
       }}
     >
       {children}

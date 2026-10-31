@@ -50,7 +50,7 @@ export default function Nav() {
                         onClick={() => setContactOpen((v) => !v)}
                         className="nav-link"
                       >
-                        <span className="text-grey-60 transition-colors duration-200">
+                        <span className="text-grey-60 transition-colors duration-[--dur-quick]">
                           {link.label}
                         </span>
                         <span className="nav-underline" aria-hidden="true" />
@@ -67,7 +67,7 @@ export default function Nav() {
                       aria-current={active ? "page" : undefined}
                       className="nav-link"
                     >
-                      <span className="text-grey-60 transition-colors duration-200">
+                      <span className="text-grey-60 transition-colors duration-[--dur-quick]">
                         {link.label}
                       </span>
                       <span className="nav-underline" aria-hidden="true" />

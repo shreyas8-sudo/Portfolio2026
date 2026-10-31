@@ -74,7 +74,7 @@ export default function CaseCover({
           preload={always ? "auto" : "metadata"}
           onEnded={onEnded}
           onError={() => setHasMedia(false)}
-          className="size-full object-cover transition-transform duration-500 group-hover:scale-[1.015]"
+          className="size-full object-cover transition-transform duration-[--dur-slow] ease-[--ease-move] group-hover:scale-[1.02]"
         >
           <source src={video} type="video/mp4" />
         </video>
@@ -84,7 +84,7 @@ export default function CaseCover({
           src={poster}
           alt=""
           onError={() => setHasMedia(false)}
-          className="size-full object-cover transition-transform duration-500 group-hover:scale-[1.015]"
+          className="size-full object-cover transition-transform duration-[--dur-slow] ease-[--ease-move] group-hover:scale-[1.02]"
         />
       ) : (
         /* designed placeholder */

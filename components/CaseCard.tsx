@@ -22,7 +22,7 @@ export default function CaseCard({ study }: { study: CaseStudy }) {
       onBlur={() => setHover(false)}
       /* press feedback: the card dips under the cursor and springs back,
          so a click registers before the next page has loaded */
-      className="group block overflow-hidden rounded-[--radius-panel] border border-grey-20 bg-grey-00 transition-[transform,box-shadow] duration-300 ease-[cubic-bezier(0.22,1,0.36,1)] hover:-translate-y-0.5 hover:shadow-[0_6px_22px_rgba(0,0,0,0.06)] active:translate-y-0 active:scale-[0.994] active:duration-100"
+      className="group block overflow-hidden border border-grey-20 bg-grey-00 transition-[transform,box-shadow,border-color] duration-[--dur-base] ease-[--ease-move] hover:-translate-y-[3px] hover:border-grey-40 hover:shadow-[0_2px_8px_rgba(19,28,51,0.05)] active:translate-y-0 active:scale-[0.994] active:duration-[--dur-quick]"
     >
       <CaseCover
         poster={study.cover.poster}
@@ -44,7 +44,7 @@ export default function CaseCard({ study }: { study: CaseStudy }) {
 
           <span className="ml-auto flex items-center gap-2">
             <span
-              className="hidden items-center gap-1.5 rounded-[--radius-tag] border px-2 py-[3px] sm:flex"
+              className="hidden items-center gap-1.5 border px-2 py-[3px] sm:flex"
               style={{ borderColor: study.accent }}
             >
               <span className="label" style={{ color: study.accent }}>
@@ -52,7 +52,7 @@ export default function CaseCard({ study }: { study: CaseStudy }) {
               </span>
             </span>
             <span
-              className="flex shrink-0 items-center gap-1.5 rounded-[--radius-tag] px-2 py-[3px]"
+              className="flex shrink-0 items-center gap-1.5 px-2 py-[3px]"
               style={{ background: "var(--color-orange)" }}
             >
               <span className="label whitespace-nowrap text-white">

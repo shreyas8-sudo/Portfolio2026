@@ -1,6 +1,7 @@
 "use client";
 
 import { motion, useReducedMotion } from "framer-motion";
+import { dur, ease } from "@/lib/motion";
 
 /**
  * Arrival, one level up from Settle.
@@ -29,7 +30,7 @@ export default function PageIn({
       className={className}
       initial={{ opacity: 0 }}
       animate={{ opacity: 1 }}
-      transition={{ duration: 0.3, ease: "easeOut" }}
+      transition={{ duration: dur.slow, ease: ease.fade }}
     >
       {children}
     </motion.div>

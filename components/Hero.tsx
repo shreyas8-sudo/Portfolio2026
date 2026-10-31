@@ -2,6 +2,7 @@
 
 import { useEffect, useState } from "react";
 import { motion, AnimatePresence } from "framer-motion";
+import { dur, ease } from "@/lib/motion";
 import { site, waypoints, type Waypoint } from "@/lib/site";
 import Plane from "./Plane";
 import Settle from "./Settle";
@@ -84,7 +85,7 @@ export default function Hero() {
 
         {/* nudge toward the dots, bottom left */}
         <p
-          className={`absolute bottom-8 left-6 z-30 text-caption italic text-grey-40 transition-opacity duration-500 md:left-10 ${
+          className={`absolute bottom-8 left-6 z-30 text-caption italic text-grey-40 transition-opacity duration-[--dur-slow] md:left-10 ${
             active ? "opacity-0" : "opacity-100"
           }`}
         >
@@ -118,7 +119,7 @@ export default function Hero() {
             >
               {/* number sits inside the dot */}
               <span
-                className="z-10 grid place-items-center rounded-full font-mono text-[12px] font-semibold leading-none text-white transition-all duration-300"
+                className="z-10 grid place-items-center rounded-full font-mono text-[12px] font-semibold leading-none text-white transition-all duration-[--dur-base]"
                 style={{
                   width: isActive ? 26 : 23,
                   height: isActive ? 26 : 23,
@@ -129,7 +130,7 @@ export default function Hero() {
                 {i + 1}
               </span>
               <span
-                className="absolute rounded-full border transition-all duration-500 group-hover:scale-110"
+                className="absolute rounded-full border transition-all duration-[--dur-slow] group-hover:scale-110"
                 style={{
                   width: isActive ? 38 : 30,
                   height: isActive ? 38 : 30,
@@ -149,10 +150,10 @@ export default function Hero() {
               initial={{ opacity: 0, y: 4 }}
               animate={{ opacity: 1, y: 0 }}
               exit={{ opacity: 0, y: -3 }}
-              transition={{ duration: 0.2, ease: "easeOut" }}
+              transition={{ duration: dur.quick, ease: ease.fade }}
               /* chip, not bare text: the sky washes drift underneath it and a
                  grey caption on a moving gradient is a coin toss to read */
-              className="absolute z-30 max-w-[12rem] rounded-[--radius-tag] bg-grey-00/80 px-2.5 py-1 text-center text-caption text-grey-90 shadow-[0_1px_6px_rgba(19,28,51,0.07)] backdrop-blur-sm sm:max-w-none sm:whitespace-nowrap"
+              className="absolute z-30 max-w-[12rem] bg-grey-00/80 px-2.5 py-1 text-center text-caption text-grey-90 shadow-[0_1px_6px_rgba(19,28,51,0.07)] backdrop-blur-sm sm:max-w-none sm:whitespace-nowrap"
               style={{
                 left: `${anchors[current.position].x}%`,
                 top: `calc(${anchors[current.position].y}% + 22px)`,

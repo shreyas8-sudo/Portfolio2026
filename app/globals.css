@@ -61,12 +61,21 @@
   /* --- spacing --- */
   --spacing-gutter: 1.5rem;
 
-  /* --- varied radii (uniform radius = template tell) --- */
-  --radius-sharp: 2px;
-  --radius-card: 10px;
-  --radius-panel: 14px;
-  --radius-tag: 16px;
+  /* --- radii: sharp everywhere, round only for logo and hero dots --- */
+  --radius-sharp: 0px;
+  --radius-card: 0px;
+  --radius-panel: 0px;
+  --radius-tag: 0px;
   --radius-pill: 999px;
+
+  /* --- motion tokens --- */
+  --dur-quick: 160ms;
+  --dur-base: 280ms;
+  --dur-slow: 480ms;
+  --ease-move: cubic-bezier(0.22, 1, 0.36, 1);
+  --ease-fade: cubic-bezier(0.4, 0, 0.2, 1);
+  --rise: 16px;
+  --lift: 3px;
 
   /* --- layout --- */
   --container-content: 60rem; /* 960px — 67% of 1440 */
@@ -142,7 +151,7 @@ body {
   font-size: var(--text-caption);
   font-weight: 400;
   padding-bottom: 3px;
-  transition: font-weight 120ms ease;
+  transition: font-weight var(--dur-quick) var(--ease-fade);
 }
 
 .nav-link:hover > span:first-child,
@@ -161,7 +170,7 @@ body {
   background: var(--color-orange);
   transform: scaleX(0);
   transform-origin: center;
-  transition: transform 260ms cubic-bezier(0.22, 1, 0.36, 1);
+  transition: transform var(--dur-base) var(--ease-move);
 }
 
 .nav-link:hover .nav-underline,
@@ -193,8 +202,8 @@ body {
   border-radius: 999px;
   opacity: 0;
   transition:
-    width 280ms cubic-bezier(0.22, 1, 0.36, 1),
-    opacity 180ms ease;
+    width var(--dur-base) var(--ease-move),
+    opacity var(--dur-base) var(--ease-fade);
 }
 
 .arrow-head {
@@ -308,7 +317,7 @@ body {
   *::after {
     animation-duration: 0.01ms !important;
     animation-iteration-count: 1 !important;
-    transition-duration: 0.01ms !important;
+    transition-duration: var(--dur-quick) !important;
     scroll-behavior: auto !important;
   }
   .hero-sky::before,

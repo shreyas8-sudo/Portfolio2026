@@ -2,6 +2,7 @@
 
 import { useEffect, useRef, useState } from "react";
 import { motion, AnimatePresence } from "framer-motion";
+import { dur, ease } from "@/lib/motion";
 import type { Layover } from "@/lib/site";
 import Arrow from "./Arrow";
 
@@ -47,8 +48,8 @@ function Thumb({ item, active }: { item: Layover; active: boolean }) {
           src={item.thumb}
           alt={item.name}
           onError={() => setNoImg(true)}
-          className="size-full object-cover object-top transition-transform duration-500"
-          style={{ transform: active ? "scale(1.03)" : "scale(1)" }}
+          className="size-full object-cover object-top transition-transform duration-[--dur-slow] ease-[--ease-move]"
+          style={{ transform: active ? "scale(1.02)" : "scale(1)" }}
         />
       ) : (
         <span className="label absolute inset-0 grid place-items-center text-grey-40">
@@ -114,7 +115,7 @@ export default function LayoverGrid({ items }: { items: Layover[] }) {
                     initial={{ opacity: 0, height: 0 }}
                     animate={{ opacity: 1, height: "auto" }}
                     exit={{ opacity: 0, height: 0 }}
-                    transition={{ duration: 0.22, ease: "easeOut" }}
+                    transition={{ duration: dur.base, ease: ease.move }}
                     className="overflow-hidden"
                   >
                     <p className="mt-2 text-caption text-grey-60">
@@ -128,7 +129,7 @@ export default function LayoverGrid({ items }: { items: Layover[] }) {
                           target="_blank"
                           rel="noreferrer"
                           onClick={(e) => e.stopPropagation()}
-                          className="arrow-link mt-3 inline-flex rounded-[--radius-tag] border border-grey-20 px-3 py-1.5"
+                          className="arrow-link mt-3 inline-flex border border-grey-20 px-3 py-1.5"
                           style={{ color: "var(--color-blue)" }}
                         >
                           <span>{item.link.label}</span>
@@ -151,9 +152,9 @@ export default function LayoverGrid({ items }: { items: Layover[] }) {
         );
 
         const shell =
-          "flex size-full flex-col overflow-hidden rounded-[--radius-card] border bg-grey-00 text-left transition-all duration-300 " +
+          "flex size-full flex-col overflow-hidden border bg-grey-00 text-left transition-[transform,box-shadow,border-color] duration-[--dur-base] ease-[--ease-move] " +
           (isOn
-            ? "border-grey-40 shadow-[0_5px_20px_rgba(0,0,0,0.06)]"
+            ? "-translate-y-[3px] border-grey-40 shadow-[0_2px_8px_rgba(19,28,51,0.05)]"
             : "border-grey-20");
 
         return (
