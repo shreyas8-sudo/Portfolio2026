@@ -10,8 +10,6 @@ const CELL = 10;
 const DOT = 5;
 const HERO_H = 720;
 const MAP_TOP = 96;
-const NAME = "Shreya Shanmugam.";
-const ALPHA = "ABCDEFGHIJKLMNOPQRSTUVWXYZ";
 
 const PINS = [
   { num: 1, x: 1034, y: 338, color: "#6c9fde", label: "Previously in Hyderabad" },
@@ -56,11 +54,11 @@ function buildDots(): Dot[] {
         fy: row * CELL + (CELL - DOT) / 2,
         sx: Math.random() * 1440,
         sy: Math.random() * HERO_H,
-        flyStart: Math.random() * 600,
-        flyDur: 900 + Math.random() * 225,
+        flyStart: Math.random() * 1000,
+        flyDur: 1200 + Math.random() * 400,
         blinks: Array.from(
-          { length: 3 + Math.floor(Math.random() * 3) },
-          () => Math.random() * 500
+          { length: 2 + Math.floor(Math.random() * 2) },
+          () => Math.random() * 600
         ).sort((a, b) => a - b),
       });
     }
@@ -78,19 +76,16 @@ function IntroLink({ href, children }: { href: string; children: React.ReactNode
 }
 
 export default function Hero() {
-  const canvasRef  = useRef<HTMLCanvasElement>(null);
-  const charRefs   = useRef<(HTMLSpanElement | null)[]>([]);
-  const [charWidths, setCharWidths] = useState<number[] | null>(null);
-  const [nameDisp,   setNameDisp]   = useState<string[]>(NAME.split(""));
-  const [activePin,  setActivePin]  = useState<number | null>(null);
-  const [pinsLive,   setPinsLive]   = useState(false);
+  const canvasRef = useRef<HTMLCanvasElement>(null);
+  const [activePin, setActivePin] = useState<number | null>(null);
+  const [pinsLive,  setPinsLive]  = useState(false);
   const reduced = useReducedMotion() ?? false;
 
-  /* measure fixed char widths once mounted */
+  /* enable pin 2 label after sequence ends */
   useEffect(() => {
     if (reduced) { setActivePin(2); setPinsLive(true); return; }
-    const ws = charRefs.current.map(el => el?.getBoundingClientRect().width ?? 20);
-    setCharWidths(ws);
+    const t = setTimeout(() => { setActivePin(2); setPinsLive(true); }, 5200);
+    return () => clearTimeout(t);
   }, [reduced]);
 
   /* canvas: scatter and settle */
@@ -154,47 +149,13 @@ export default function Hero() {
       }
       ctx!.globalAlpha = 1;
 
-      if (e < 2100) raf = requestAnimationFrame(frame);
+      if (e < 3000) raf = requestAnimationFrame(frame);
       else drawFinal();
     }
 
     raf = requestAnimationFrame(frame);
     return () => cancelAnimationFrame(raf);
   }, [reduced]);
-
-  /* name scramble starting at t=1.3s */
-  useEffect(() => {
-    if (reduced || !charWidths) return;
-    const nameArr = NAME.split("");
-    let locked = 0;
-    let tick: ReturnType<typeof setInterval> | null = null;
-
-    const t1 = setTimeout(() => {
-      tick = setInterval(() => {
-        setNameDisp(nameArr.map((ch, i) => {
-          if (i < locked || ch === " " || ch === ".") return nameArr[i];
-          return ALPHA[Math.floor(Math.random() * ALPHA.length)];
-        }));
-      }, 60);
-
-      nameArr.forEach((_, i) => {
-        setTimeout(() => {
-          locked = i + 1;
-          if (locked >= nameArr.length) {
-            clearInterval(tick!);
-            setNameDisp(NAME.split(""));
-          }
-        }, i * 45);
-      });
-    }, 2000);
-
-    const t2 = setTimeout(() => { setActivePin(2); setPinsLive(true); }, 3800);
-
-    return () => {
-      clearTimeout(t1); clearTimeout(t2);
-      if (tick) clearInterval(tick);
-    };
-  }, [reduced, charWidths]);
 
   const ease: [number, number, number, number] = [0.22, 1, 0.36, 1];
 
@@ -224,12 +185,12 @@ export default function Hero() {
           background: "radial-gradient(ellipse 100% 100% at 50% 50%, rgba(255,255,255,0.82) 0%, rgba(255,255,255,0) 100%)",
         }} />
 
-        {/* plane: outer div holds final center position; inner motion.div animates the fly-in */}
+        {/* plane */}
         <div className="absolute" style={{ left: 695, top: 129, transform: "translate(-50%, -50%)", zIndex: 10 }}>
           <motion.div
             initial={reduced ? false : { x: -2000, y: -80, rotate: -8, opacity: 0 }}
             animate={reduced ? {} : { x: 0, y: 0, rotate: 0, opacity: 1 }}
-            transition={reduced ? {} : { duration: 1.35, delay: 1.5, ease }}
+            transition={reduced ? {} : { duration: 1.8, delay: 2.0, ease }}
           >
             <Plane width={132} />
           </motion.div>
@@ -247,7 +208,7 @@ export default function Hero() {
             }}
             initial={reduced ? false : { scale: 0.6, opacity: 0 }}
             animate={reduced ? {} : { scale: 1, opacity: 1 }}
-            transition={reduced ? {} : { duration: 0.42, delay: 3.0 + idx * 0.09, ease }}
+            transition={reduced ? {} : { duration: 0.6, delay: 3.8 + idx * 0.12, ease }}
             onMouseEnter={() => pinsLive && setActivePin(pin.num)}
             onMouseLeave={() => pinsLive && setActivePin(null)}
             aria-label={pin.label}
@@ -295,24 +256,16 @@ export default function Hero() {
             }}
             initial={reduced ? false : { opacity: 0 }}
             animate={reduced ? {} : { opacity: 1 }}
-            transition={reduced ? {} : { duration: 0.24, delay: 2.0, ease: [0.4, 0, 0.2, 1] }}
+            transition={reduced ? {} : { duration: 0.8, delay: 3.0, ease: [0.4, 0, 0.2, 1] }}
           >
-            {NAME.split("").map((ch, i) => (
-              <span
-                key={i}
-                ref={el => { charRefs.current[i] = el; }}
-                style={charWidths ? { display: "inline-block", width: charWidths[i], textAlign: "center" } : {}}
-              >
-                {charWidths ? nameDisp[i] : ch}
-              </span>
-            ))}
+            Shreya Shanmugam.
           </motion.h1>
 
           <motion.p
             style={{ marginTop: 10, fontFamily: "var(--font-sans)", fontSize: 18, lineHeight: 1.6 }}
             initial={reduced ? false : { opacity: 0, y: 16 }}
             animate={reduced ? {} : { opacity: 1, y: 0 }}
-            transition={reduced ? {} : { duration: 0.72, delay: 3.0, ease }}
+            transition={reduced ? {} : { duration: 0.9, delay: 3.8, ease }}
           >
             <span style={{ fontWeight: 400, color: "#211f1c" }}>Designing to make complex systems feel </span>
             <span style={{ fontWeight: 700, color: "#3d6bc4" }}>simple</span>
@@ -324,7 +277,7 @@ export default function Hero() {
             style={{ marginTop: 10, fontFamily: "var(--font-sans)", fontSize: 16, lineHeight: 1.6, color: "#434343" }}
             initial={reduced ? false : { opacity: 0, y: 16 }}
             animate={reduced ? {} : { opacity: 1, y: 0 }}
-            transition={reduced ? {} : { duration: 0.72, delay: 3.12, ease }}
+            transition={reduced ? {} : { duration: 0.9, delay: 4.0, ease }}
           >
             <span style={{ fontWeight: 400 }}>Currently</span>{" "}
             <span style={{ fontWeight: 700 }}>@</span>{" "}
