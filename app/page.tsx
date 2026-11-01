@@ -1,18 +1,18 @@
-import Link from "next/link";
 import Hero from "@/components/Hero";
-import CaseCard from "@/components/CaseCard";
-import ArrowLink from "@/components/ArrowLink";
-import { caseStudies, layovers } from "@/lib/site";
+import CaseTile from "@/components/CaseTile";
+import WalletTile from "@/components/WalletTile";
+import { caseStudies } from "@/lib/site";
+
+const synechron = caseStudies.find((c) => c.slug === "synechron")!;
+const basis     = caseStudies.find((c) => c.slug === "basis")!;
 
 export default function Home() {
-  const preview = layovers.slice(0, 4);
-
   return (
     <>
       <Hero />
 
-      {/* SELECTED WORK */}
-      <section id="work" className="container-content scroll-mt-28 pt-20">
+      {/* 2x2 WORK GRID */}
+      <section id="work" className="container-content scroll-mt-20 pt-20">
         <div className="flex items-center gap-4">
           <h2
             className="label text-[0.8125rem]"
@@ -23,92 +23,85 @@ export default function Home() {
           <span className="h-px flex-1 bg-grey-20" aria-hidden="true" />
         </div>
 
-        <div className="mt-8 space-y-8">
-          {caseStudies.map((study) => (
-            <CaseCard key={study.slug} study={study} />
-          ))}
-        </div>
-      </section>
+        <div className="mt-8 grid gap-6 md:grid-cols-2">
+          {/* 1 -- Synechron */}
+          <CaseTile
+            id="synechron"
+            company="Synechron"
+            role="Product design intern"
+            roleMobile="Product design"
+            status="✈ SHIPPED 2026"
+            statusMobile="✈ 2026"
+            statusColor="var(--color-orange)"
+            title="Designed process intelligence for banks, and shipped a spec skill engineers now use"
+            href="/synechron"
+            cover={synechron.cover}
+          />
 
-      {/* LAYOVERS TEASER */}
-      <section className="container-content pt-24">
-        <div className="flex items-center gap-4">
-          <h2
-            className="label text-[0.8125rem]"
-            style={{ color: "var(--color-blue)" }}
+          {/* 2 -- Basis */}
+          <CaseTile
+            company="Basis"
+            role="Co-founder, designer"
+            status="✈ SHIPPED 2025"
+            statusMobile="✈ 2025"
+            statusColor="var(--color-orange)"
+            title="Co-founded an AI copilot for cost segregation engineers, and won Best Traction"
+            href="/basis"
+            cover={basis.cover}
+          />
+
+          {/* 3 -- Disney (no link yet) */}
+          <div
+            id="disney"
+            className="flex flex-col overflow-hidden border border-grey-20 bg-grey-00"
           >
-            A few layovers along the way
-          </h2>
-          <span className="h-px flex-1 bg-grey-20" aria-hidden="true" />
-        </div>
-        <p className="mt-4 text-body text-grey-60">
-          Experiments, side projects, and things shipped for fun.
-        </p>
-
-        <ul className="mt-7 grid grid-cols-2 gap-4 md:grid-cols-4">
-          {preview.map((item, i) => {
-            const card = (
-              <>
-                <div className="aspect-[16/9] overflow-hidden bg-grey-05">
-                  {/* eslint-disable-next-line @next/next/no-img-element */}
-                  <img
-                    src={item.thumb}
-                    alt={item.name}
-                    className="size-full object-cover object-top transition-transform duration-[--dur-slow] ease-[--ease-move] group-hover:scale-[1.02]"
-                  />
-                </div>
-                <div className="px-4 py-3.5">
-                  <div className="flex items-center justify-between gap-2">
-                    <span
-                      className="label"
-                      style={{ color: "var(--color-blue)" }}
-                    >
-                      {item.date}
-                    </span>
-                    <span
-                      className="label"
-                      style={{ color: "var(--color-orange)" }}
-                    >
-                      {item.origin}
-                    </span>
-                  </div>
-                  <p className="mt-1.5 text-caption font-medium text-grey-90">
-                    {item.name}
-                  </p>
-                </div>
-              </>
-            );
-
-            const shell =
-              "group block overflow-hidden border border-grey-20 bg-grey-00 transition-[transform,box-shadow,border-color] duration-[--dur-base] ease-[--ease-move] hover:-translate-y-[3px] hover:border-grey-40 hover:shadow-[0_2px_8px_rgba(19,28,51,0.05)]";
-
-            return (
-              /* two on a phone, four once there's a row to put them in */
-              <li
-                key={item.name}
-                className={i > 1 ? "hidden md:block" : undefined}
+            {/* cover */}
+            <div
+              className="relative aspect-[16/9] overflow-hidden"
+              style={{
+                background: "linear-gradient(135deg, #b3c3e5, #6c9fde, #3d6bc4)",
+                backgroundSize: "300% 300%",
+                animation: "disney-drift 14s ease-in-out infinite",
+              }}
+            >
+              <div
+                className="absolute inset-0 flex flex-col items-center justify-center text-center"
+                style={{
+                  animation: "title-float 6s ease-in-out infinite",
+                }}
               >
-                {item.link ? (
-                  <a
-                    href={item.link.href}
-                    target="_blank"
-                    rel="noreferrer"
-                    className={shell}
-                  >
-                    {card}
-                  </a>
-                ) : (
-                  <Link href="/layovers" className={shell}>
-                    {card}
-                  </Link>
-                )}
-              </li>
-            );
-          })}
-        </ul>
+                <p
+                  className="px-4 text-[1.75rem] font-semibold leading-tight tracking-tight text-white sm:text-[2.25rem]"
+                  style={{ textShadow: "0 1px 8px rgba(19,28,51,0.25)" }}
+                >
+                  Disney Experiences
+                </p>
+                <p className="label mt-2 text-white/80">CASE STUDY COMING SOON</p>
+              </div>
+            </div>
 
-        <div className="mt-7">
-          <ArrowLink href="/layovers">see all</ArrowLink>
+            {/* info */}
+            <div className="flex flex-1 flex-col px-4 py-3.5 sm:px-5 sm:py-4">
+              <div className="flex items-center justify-between gap-2">
+                <p className="label text-grey-60">
+                  <span className="text-grey-90">
+                    <span className="sm:hidden">Disney</span>
+                    <span className="hidden sm:inline">Disney Experiences</span>
+                  </span>
+                  {" · "}via ProductSC
+                </p>
+                <p className="label whitespace-nowrap" style={{ color: "var(--color-marigold)" }}>
+                  ◷ BOARDING DEC
+                </p>
+              </div>
+              <p className="mt-2 text-[20px] font-semibold leading-snug tracking-tight text-grey-90 sm:text-[22px]">
+                Unifying Disney&apos;s fragmented experience offerings into one place
+              </p>
+            </div>
+          </div>
+
+          {/* 4 -- Layovers wallet */}
+          <WalletTile />
         </div>
       </section>
     </>
