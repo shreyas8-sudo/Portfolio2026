@@ -1,172 +1,273 @@
 "use client";
 
-import { useEffect, useState } from "react";
-import { motion, AnimatePresence } from "framer-motion";
-import { site, waypoints, type Waypoint } from "@/lib/site";
+import { useEffect, useRef, useState } from "react";
+import Link from "next/link";
 import Plane from "./Plane";
-import Settle from "./Settle";
+import { WORLD_COLS, WORLD_ROWS, WORLD_ROWS_DATA } from "@/lib/world-pixels";
 
-/* pin colours, brighter, and marigold swapped for orange so the
-   numbers inside stay legible against white */
-const COLOR: Record<Waypoint["color"], string> = {
-  sky: "#3d8fe0",
-  marigold: "var(--color-orange)",
-  blue: "var(--color-blue)",
-};
+const CELL = 10;
+const DOT = 5;
+const HERO_H = 720;
+const MAP_TOP = 96;
 
-/* Dots sit wide apart, framing the centred name.
-   On a phone there is no width to frame anything with, so they move out of
-   the text band entirely (roughly 38% to 64%) and sit above and below it. */
-const ANCHOR: Record<Waypoint["position"], { x: number; y: number }> = {
-  left: { x: 10, y: 42 },
-  bottom: { x: 50, y: 86 },
-  right: { x: 90, y: 26 },
-};
+const PINS = [
+  { num: 1, x: 1034, y: 338, color: "#6c9fde", label: "Previously in Hyderabad" },
+  { num: 2, x: 247,  y: 272, color: "#d97a2a", label: "Now in Los Angeles" },
+  { num: 3, x: 502,  y: 185, color: "#3d6bc4", label: "Looking for what's next" },
+] as const;
 
-const ANCHOR_SM: Record<Waypoint["position"], { x: number; y: number }> = {
-  left: { x: 50, y: 24 },
-  bottom: { x: 28, y: 80 },
-  right: { x: 76, y: 73 },
-};
-
-/* plane rests tucked just above the name */
-const REST = { x: 50, y: 27 };
-const REST_SM = { x: 50, y: 9 };
+function IntroLink({ href, children }: { href: string; children: React.ReactNode }) {
+  const cls =
+    "font-bold text-[#211f1c] underline underline-offset-2 decoration-[#211f1c]/50 " +
+    "transition-colors duration-[--dur-quick] ease-[--ease-fade] " +
+    "hover:text-[#3d6bc4] hover:decoration-[#3d6bc4]";
+  if (href.startsWith("#")) return <a href={href} className={cls}>{children}</a>;
+  return <Link href={href} className={cls}>{children}</Link>;
+}
 
 export default function Hero() {
-  const [active, setActive] = useState<string | null>(null);
-  const [narrow, setNarrow] = useState(false);
+  const canvasRef = useRef<HTMLCanvasElement>(null);
+  const [activePin, setActivePin] = useState<number | null>(null);
 
   useEffect(() => {
-    const mq = window.matchMedia("(max-width: 639px)");
-    const sync = () => setNarrow(mq.matches);
-    sync();
-    mq.addEventListener("change", sync);
-    return () => mq.removeEventListener("change", sync);
+    const canvas = canvasRef.current;
+    if (!canvas) return;
+    const ctx = canvas.getContext("2d");
+    if (!ctx) return;
+
+    const dpr = window.devicePixelRatio || 1;
+    const w = WORLD_COLS * CELL;
+    const h = WORLD_ROWS * CELL;
+    canvas.width = w * dpr;
+    canvas.height = h * dpr;
+    canvas.style.width = `${w}px`;
+    canvas.style.height = `${h}px`;
+    ctx.scale(dpr, dpr);
+
+    ctx.clearRect(0, 0, w, h);
+    ctx.fillStyle = "#888888";
+
+    for (let row = 0; row < WORLD_ROWS; row++) {
+      const rowStr = WORLD_ROWS_DATA[row];
+      for (let col = 0; col < WORLD_COLS; col++) {
+        if (rowStr[col] === "1") {
+          ctx.fillRect(
+            col * CELL + (CELL - DOT) / 2,
+            row * CELL + (CELL - DOT) / 2,
+            DOT,
+            DOT
+          );
+        }
+      }
+    }
   }, []);
 
-  const anchors = narrow ? ANCHOR_SM : ANCHOR;
-  const current = waypoints.find((w) => w.id === active) ?? null;
-  const planeAt = current ? anchors[current.position] : narrow ? REST_SM : REST;
-
   return (
-    <section className="hero-sky relative w-full overflow-hidden">
-      {/* exactly one viewport, minus the nav, text lands centred with no scroll */}
-      <div className="relative mx-auto h-[calc(100svh-4.5rem)] max-w-[84rem] px-6 md:px-10">
-        {/* plane */}
-        <motion.div
-          className="pointer-events-none absolute z-10"
-          initial={{ left: "-12%", top: `${planeAt.y}%`, opacity: 0 }}
-          animate={{ left: `${planeAt.x}%`, top: `${planeAt.y}%`, opacity: 1 }}
-          transition={{ type: "spring", stiffness: 48, damping: 17, mass: 1 }}
-          style={{ translate: "-50% -50%" }}
+    <section
+      className="relative w-full overflow-hidden"
+      style={{ height: HERO_H, backgroundColor: "#e9e9e6" }}
+    >
+      {/* Radial blue wash toward edges */}
+      <div
+        className="pointer-events-none absolute inset-0"
+        style={{
+          background:
+            "radial-gradient(ellipse 160% 130% at 50% 50%, transparent 30%, rgba(108,159,222,0.20) 100%)",
+        }}
+      />
+
+      {/* White radial glow: 1540x642, centred at y=331, 90%->0% */}
+      <div
+        className="pointer-events-none absolute"
+        style={{
+          width: 1540,
+          height: 642,
+          left: "50%",
+          top: 331,
+          transform: "translate(-50%, -50%)",
+          background:
+            "radial-gradient(ellipse 100% 100% at 50% 50%, rgba(255,255,255,0.90) 0%, rgba(255,255,255,0) 100%)",
+        }}
+      />
+
+      {/* 1440px content frame, centred */}
+      <div
+        className="pointer-events-none absolute"
+        style={{ left: "50%", transform: "translateX(-50%)", width: 1440, height: HERO_H }}
+      >
+        {/* Pixel map canvas */}
+        <canvas
+          ref={canvasRef}
+          className="absolute"
+          style={{ top: MAP_TOP, left: 0 }}
+          aria-hidden="true"
+        />
+
+        {/* Plane at rest: (695, 129) */}
+        <div
+          className="absolute z-10"
+          style={{ left: 695, top: 129, transform: "translate(-50%, -50%)" }}
         >
-          <Plane width={narrow ? 88 : 132} climb={-18} />
-        </motion.div>
-
-        {/* centred name block */}
-        <div className="relative z-20 flex h-full flex-col items-center justify-center text-center">
-          <Settle delay={0.05}>
-            <h1 className="text-[clamp(2.25rem,5.2vw,3.5rem)] font-semibold leading-[1.05] tracking-[-0.03em] text-grey-90">
-              {site.name}.
-            </h1>
-          </Settle>
-
-          {/* the tagline carries the hero now. sized off the viewport so it always
-              holds one line, never breaking mid-thought */}
-          <Settle delay={0.16} distance={14}>
-            <p className="mt-5 max-w-[22ch] text-balance text-[clamp(1.15rem,3.15vw,1.6rem)] font-medium leading-[1.3] tracking-[-0.015em] text-grey-60 sm:max-w-none sm:whitespace-nowrap">
-              Designing to make complex systems feel{" "}
-              <span style={{ color: "var(--color-blue)" }}>simple</span>.
-            </p>
-          </Settle>
+          <Plane width={132} />
         </div>
 
-        {/* nudge toward the dots, bottom left */}
-        <p
-          className={`absolute bottom-8 left-6 z-30 text-caption italic text-grey-40 transition-opacity duration-500 md:left-10 ${
-            active ? "opacity-0" : "opacity-100"
-          }`}
-        >
-          psst, click the dots
-        </p>
-
-        {/* waypoint dots, numbered */}
-        {waypoints.map((w, i) => {
-          const pos = anchors[w.position];
-          const isActive = active === w.id;
-          return (
-            <motion.button
-              key={w.id}
-              initial={{ opacity: 0, scale: 0.6 }}
-              animate={{ opacity: 1, scale: 1 }}
-              transition={{
-                type: "spring",
-                stiffness: 500,
-                damping: 22,
-                delay: 0.42 + i * 0.09,
-              }}
-              onClick={() => setActive(isActive ? null : w.id)}
-              aria-pressed={isActive}
-              aria-label={w.label}
-              className="group absolute z-30 grid size-11 place-items-center"
+        {/* Pins */}
+        {PINS.map((pin) => (
+          <button
+            key={pin.num}
+            className="pointer-events-auto absolute z-20 grid place-items-center"
+            style={{
+              left: pin.x,
+              top: pin.y,
+              width: 44,
+              height: 44,
+              transform: "translate(-50%, -50%)",
+              background: "none",
+              border: "none",
+              cursor: "default",
+              padding: 0,
+            }}
+            onMouseEnter={() => setActivePin(pin.num)}
+            onMouseLeave={() => setActivePin(null)}
+            aria-label={pin.label}
+          >
+            <span
+              className="absolute rounded-full"
               style={{
-                left: `${pos.x}%`,
-                top: `${pos.y}%`,
-                translate: "-50% -50%",
+                width: 30,
+                height: 30,
+                border: `1px solid ${pin.color}`,
+                opacity: 0.35,
+              }}
+            />
+            <span
+              className="relative z-10 grid place-items-center rounded-full"
+              style={{
+                width: 22,
+                height: 22,
+                backgroundColor: pin.color,
+                fontFamily: "var(--font-mono)",
+                fontSize: 11,
+                fontWeight: 500,
+                letterSpacing: "0.1em",
+                color: "#211f1c",
               }}
             >
-              {/* number sits inside the dot */}
-              <span
-                className="z-10 grid place-items-center rounded-full font-mono text-[12px] font-semibold leading-none text-white transition-all duration-300"
+              {pin.num}
+            </span>
+          </button>
+        ))}
+
+        {/* Pin label -- one at a time */}
+        {PINS.map((pin) =>
+          activePin !== pin.num ? null : (
+            <div
+              key={`lbl-${pin.num}`}
+              className="pointer-events-none absolute z-30"
+              style={{
+                left: pin.x,
+                top: pin.y + 15,
+                transform: "translateX(-50%)",
+              }}
+            >
+              <div
                 style={{
-                  width: isActive ? 26 : 23,
-                  height: isActive ? 26 : 23,
-                  background: COLOR[w.color],
-                  opacity: 1,
-                }}
-              >
-                {i + 1}
-              </span>
-              <span
-                className="absolute rounded-full border transition-all duration-500 group-hover:scale-110"
-                style={{
-                  width: isActive ? 38 : 30,
-                  height: isActive ? 38 : 30,
-                  borderColor: COLOR[w.color],
-                  opacity: isActive ? 0.5 : 0.25,
+                  margin: "0 auto",
+                  width: 0,
+                  height: 0,
+                  borderLeft: "5px solid transparent",
+                  borderRight: "5px solid transparent",
+                  borderBottom: "15px solid #211f1c",
                 }}
               />
-            </motion.button>
-          );
-        })}
+              <div
+                style={{
+                  backgroundColor: "rgba(255,255,255,0.92)",
+                  border: "1px solid #d6d6d2",
+                  padding: "6px 11px",
+                  whiteSpace: "nowrap",
+                  fontFamily: "var(--font-sans)",
+                  fontSize: 14,
+                  fontWeight: 500,
+                  lineHeight: 1.5,
+                  color: "#211f1c",
+                }}
+              >
+                {pin.label}
+              </div>
+            </div>
+          )
+        )}
 
-        {/* one small label at a time */}
-        <AnimatePresence mode="wait">
-          {current && (
-            <motion.p
-              key={current.id}
-              initial={{ opacity: 0, y: 4 }}
-              animate={{ opacity: 1, y: 0 }}
-              exit={{ opacity: 0, y: -3 }}
-              transition={{ duration: 0.2, ease: "easeOut" }}
-              /* chip, not bare text: the sky washes drift underneath it and a
-                 grey caption on a moving gradient is a coin toss to read */
-              className="absolute z-30 max-w-[12rem] rounded-[--radius-tag] bg-grey-00/80 px-2.5 py-1 text-center text-caption text-grey-90 shadow-[0_1px_6px_rgba(19,28,51,0.07)] backdrop-blur-sm sm:max-w-none sm:whitespace-nowrap"
-              style={{
-                left: `${anchors[current.position].x}%`,
-                top: `calc(${anchors[current.position].y}% + 22px)`,
-                translate: "-50% 0",
-              }}
-            >
-              {current.label}
-            </motion.p>
-          )}
-        </AnimatePresence>
+        {/* Name block: top at y=230, centred */}
+        <div
+          className="pointer-events-none absolute w-full text-center"
+          style={{ top: 230 }}
+        >
+          <h1
+            style={{
+              fontFamily: "var(--font-sans)",
+              fontSize: 64,
+              fontWeight: 600,
+              lineHeight: 1.04,
+              letterSpacing: "-0.03em",
+              color: "#211f1c",
+            }}
+          >
+            Shreya Shanmugam.
+          </h1>
+
+          <p
+            style={{
+              marginTop: 10,
+              fontFamily: "var(--font-sans)",
+              fontSize: 18,
+              lineHeight: 1.6,
+            }}
+          >
+            <span style={{ fontWeight: 400, color: "#211f1c" }}>
+              Designing to make complex systems feel{" "}
+            </span>
+            <span style={{ fontWeight: 700, color: "#3d6bc4" }}>simple</span>
+            <span style={{ fontWeight: 700, color: "#b3c3e5" }}>.</span>
+          </p>
+
+          <p
+            className="pointer-events-auto"
+            style={{
+              marginTop: 10,
+              fontFamily: "var(--font-sans)",
+              fontSize: 16,
+              lineHeight: 1.6,
+              color: "#434343",
+            }}
+          >
+            <span style={{ fontWeight: 400 }}>Currently</span>
+            {" "}
+            <span style={{ fontWeight: 700 }}>@</span>
+            {" "}
+            <IntroLink href="/about">USC Iovine and Young Academy</IntroLink>
+            {" "}
+            <span style={{ fontWeight: 400 }}>and</span>
+            {" "}
+            <IntroLink href="/about">Marshall</IntroLink>
+            <span style={{ fontWeight: 700 }}>.</span>
+            <br />
+            <span style={{ fontWeight: 400 }}>Consulting</span>
+            {" "}
+            <span style={{ fontWeight: 700 }}>@</span>
+            {" "}
+            <IntroLink href="#disney">Disney Experiences</IntroLink>
+            {" "}
+            <span style={{ fontWeight: 400 }}>with ProductSC, previously</span>
+            {" "}
+            <span style={{ fontWeight: 700 }}>@</span>
+            {" "}
+            <IntroLink href="#synechron">Synechron</IntroLink>
+            <span style={{ fontWeight: 700 }}>.</span>
+          </p>
+        </div>
       </div>
-
-      {/* perforation closing the hero */}
-      <div className="perforation w-full" aria-hidden="true" />
     </section>
   );
 }
