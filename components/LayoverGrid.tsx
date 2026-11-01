@@ -48,7 +48,7 @@ function Thumb({ item, active }: { item: Layover; active: boolean }) {
           src={item.thumb}
           alt={item.name}
           onError={() => setNoImg(true)}
-          className="size-full object-cover object-top transition-transform duration-[--dur-slow] ease-[--ease-move]"
+          className="size-full object-cover object-top transition-transform duration-[--dur-base] ease-[--ease-move]"
           style={{ transform: active ? "scale(1.02)" : "scale(1)" }}
         />
       ) : (

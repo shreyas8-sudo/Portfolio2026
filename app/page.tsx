@@ -70,28 +70,32 @@ export default function Home() {
                     "linear-gradient(142.98deg, #b3c3e5 14.29%, #6c9fde 53.57%, #3d6bc4 85.71%)",
                 }}
               >
-                {/* Disney wordmark logo */}
+                {/* Logo + text float TOGETHER at the same pace */}
                 <div
-                  className="absolute"
-                  style={{ left: "25.34%", top: "-6.4%", width: "46.83%" }}
+                  className="absolute pointer-events-none"
+                  style={{
+                    left: "25.34%",
+                    top: "-6.4%",
+                    width: "46.83%",
+                    animation: "title-float 3.5s ease-in-out infinite",
+                  }}
                 >
                   <Image
                     src="/disney-logo.png"
                     alt="Disney"
                     width={207}
                     height={207}
-                    className="pointer-events-none w-full object-contain"
+                    className="w-full object-contain"
                     priority
                   />
                 </div>
 
-                {/* "Experiences" + label -- floats gently */}
                 <div
                   className="absolute flex flex-col items-center gap-[10px]"
                   style={{
                     left: "25.34%",
                     top: "50%",
-                    animation: "title-float 6s ease-in-out infinite",
+                    animation: "title-float 3.5s ease-in-out infinite",
                   }}
                 >
                   <p className="whitespace-nowrap text-[1.625rem] font-semibold leading-[1.08] tracking-[-0.025em] text-[#fcfcfb] sm:text-[2rem] md:text-[2.25rem]">
@@ -106,12 +110,9 @@ export default function Home() {
               {/* info */}
               <div className="flex flex-1 flex-col px-4 py-3.5 sm:px-5 sm:py-4">
                 <div className="flex items-center justify-between gap-2">
-                  <p className="label text-grey-60">
-                    <span className="text-grey-90">
-                      <span className="sm:hidden">Disney</span>
-                      <span className="hidden sm:inline">Disney Experiences</span>
-                    </span>
-                    {" · "}via ProductSC
+                  <p className="label text-grey-90">
+                    <span className="sm:hidden">Disney</span>
+                    <span className="hidden sm:inline">Disney Experiences</span>
                   </p>
                   <p className="label whitespace-nowrap" style={{ color: "var(--color-marigold)" }}>
                     ◷ BOARDING DEC
