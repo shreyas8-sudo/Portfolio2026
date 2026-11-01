@@ -67,26 +67,12 @@ export default function Hero() {
       className="relative w-full overflow-hidden"
       style={{ height: HERO_H, backgroundColor: "#e9e9e6" }}
     >
-      {/* Radial blue wash toward edges */}
+      {/* Blue radial wash -- stronger at edges for the bluish-grey effect */}
       <div
         className="pointer-events-none absolute inset-0"
         style={{
           background:
-            "radial-gradient(ellipse 160% 130% at 50% 50%, transparent 30%, rgba(108,159,222,0.20) 100%)",
-        }}
-      />
-
-      {/* White radial glow: 1540x642, centred at y=331, 90%->0% */}
-      <div
-        className="pointer-events-none absolute"
-        style={{
-          width: 1540,
-          height: 642,
-          left: "50%",
-          top: 331,
-          transform: "translate(-50%, -50%)",
-          background:
-            "radial-gradient(ellipse 100% 100% at 50% 50%, rgba(255,255,255,0.90) 0%, rgba(255,255,255,0) 100%)",
+            "radial-gradient(ellipse 140% 110% at 50% 50%, transparent 20%, rgba(108,159,222,0.28) 100%)",
         }}
       />
 
@@ -95,27 +81,42 @@ export default function Hero() {
         className="pointer-events-none absolute"
         style={{ left: "50%", transform: "translateX(-50%)", width: 1440, height: HERO_H }}
       >
-        {/* Pixel map canvas */}
+        {/* Layer 1: pixel map canvas */}
         <canvas
           ref={canvasRef}
           className="absolute"
-          style={{ top: MAP_TOP, left: 0 }}
+          style={{ top: MAP_TOP, left: 0, zIndex: 1 }}
           aria-hidden="true"
         />
 
-        {/* Plane at rest: (695, 129) */}
+        {/* Layer 2: white radial glow above canvas, keeps text readable */}
         <div
-          className="absolute z-10"
-          style={{ left: 695, top: 129, transform: "translate(-50%, -50%)" }}
+          className="pointer-events-none absolute"
+          style={{
+            width: 1540,
+            height: 642,
+            left: "50%",
+            top: 331,
+            transform: "translate(-50%, -50%)",
+            zIndex: 2,
+            background:
+              "radial-gradient(ellipse 100% 100% at 50% 50%, rgba(255,255,255,0.90) 0%, rgba(255,255,255,0) 100%)",
+          }}
+        />
+
+        {/* Layer 3: plane at rest (695, 129) */}
+        <div
+          className="absolute"
+          style={{ left: 695, top: 129, transform: "translate(-50%, -50%)", zIndex: 10 }}
         >
           <Plane width={132} />
         </div>
 
-        {/* Pins */}
+        {/* Layer 4: pins (z-index 20) */}
         {PINS.map((pin) => (
           <button
             key={pin.num}
-            className="pointer-events-auto absolute z-20 grid place-items-center"
+            className="pointer-events-auto absolute grid place-items-center"
             style={{
               left: pin.x,
               top: pin.y,
@@ -126,11 +127,13 @@ export default function Hero() {
               border: "none",
               cursor: "default",
               padding: 0,
+              zIndex: 20,
             }}
             onMouseEnter={() => setActivePin(pin.num)}
             onMouseLeave={() => setActivePin(null)}
             aria-label={pin.label}
           >
+            {/* ring */}
             <span
               className="absolute rounded-full"
               style={{
@@ -140,8 +143,9 @@ export default function Hero() {
                 opacity: 0.35,
               }}
             />
+            {/* filled circle */}
             <span
-              className="relative z-10 grid place-items-center rounded-full"
+              className="relative grid place-items-center rounded-full"
               style={{
                 width: 22,
                 height: 22,
@@ -151,6 +155,7 @@ export default function Hero() {
                 fontWeight: 500,
                 letterSpacing: "0.1em",
                 color: "#211f1c",
+                zIndex: 1,
               }}
             >
               {pin.num}
@@ -158,16 +163,17 @@ export default function Hero() {
           </button>
         ))}
 
-        {/* Pin label -- one at a time */}
+        {/* Layer 4: pin labels -- one at a time */}
         {PINS.map((pin) =>
           activePin !== pin.num ? null : (
             <div
               key={`lbl-${pin.num}`}
-              className="pointer-events-none absolute z-30"
+              className="pointer-events-none absolute"
               style={{
                 left: pin.x,
                 top: pin.y + 15,
                 transform: "translateX(-50%)",
+                zIndex: 30,
               }}
             >
               <div
@@ -199,10 +205,10 @@ export default function Hero() {
           )
         )}
 
-        {/* Name block: top at y=230, centred */}
+        {/* Layer 5: name block (top at y=230) */}
         <div
           className="pointer-events-none absolute w-full text-center"
-          style={{ top: 230 }}
+          style={{ top: 230, zIndex: 20 }}
         >
           <h1
             style={{
