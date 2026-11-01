@@ -24,13 +24,13 @@ const PATH_SEGS = [
   "M 247 272 C 250 100 500 80 502 185",
 ] as const;
 
-/* scroll thresholds -- 0.05 hold at each pin */
-const P0     = 0.08;
-const P1_ARR = 0.30;   const P1_DEP = 0.35;
-const P2_ARR = 0.60;   const P2_DEP = 0.65;
-const P3_ARR = 0.88;   // holds to 1.0
+/* scroll thresholds — 0.12 dwell at each pin */
+const P0     = 0.02;
+const P1_ARR = 0.15;   const P1_DEP = 0.27;
+const P2_ARR = 0.45;   const P2_DEP = 0.57;
+const P3_ARR = 0.75;   // holds to 1.0
 
-/* scaleX when parked: +1 = facing right, -1 = facing left */
+/* parked facing: +1 = right, -1 = left */
 const PIN_FLIP: [1 | -1, 1 | -1, 1 | -1] = [1, -1, 1];
 
 const PINS = [
@@ -39,10 +39,12 @@ const PINS = [
   { num: 3, x: 502,  y: 185, color: "#3d6bc4", label: "Looking for what's next" },
 ] as const;
 
-/* ease-move CSS bezier string */
+/* easing strings for CSS transitions */
 const EASE_MOVE_CSS = "cubic-bezier(0.22, 1, 0.36, 1)";
+const DUR_SLOW_MS   = 480;
+const DUR_BASE_MS   = 160;
 
-/* ─── ease-move LUT for canvas ─── */
+/* ─── bezier LUT for canvas ─── */
 function makeLUT(p1x: number, p1y: number, p2x: number, p2y: number, n = 200) {
   const xs = new Float64Array(n + 1), ys = new Float64Array(n + 1);
   for (let i = 0; i <= n; i++) {
@@ -74,8 +76,8 @@ function buildDots(): Dot[] {
       _dots.push({
         fx: col*CELL + (CELL-DOT)/2, fy: row*CELL + (CELL-DOT)/2,
         sx: Math.random()*1440, sy: Math.random()*720,
-        flyStart: Math.random()*1000, flyDur: 1200 + Math.random()*400,
-        blinks: Array.from({length:2+Math.floor(Math.random()*2)}, ()=>Math.random()*600).sort((a,b)=>a-b),
+        flyStart: Math.random()*600, flyDur: 800 + Math.random()*400,
+        blinks: Array.from({length:2+Math.floor(Math.random()*2)}, ()=>Math.random()*400).sort((a,b)=>a-b),
       });
     }
   }
@@ -90,51 +92,58 @@ function IntroLink({ href, children }: { href: string; children: React.ReactNode
   return <Link href={href} className={cls}>{children}</Link>;
 }
 
-/* ─── rotation math ─────────────────────────────────────────────────────────
-   Plane SVG faces right by default.
-   For angle θ (atan2 in SVG coords: 0=right, 90=down, ±180=left):
-   - Going right (|θ| ≤ 90): scaleX=+1, rotate(θ)
-   - Going left  (|θ| > 90): scaleX=−1, rotate(θ±180) so rot ∈ [−90,90]
-   Never uses scaleY. ──────────────────────────────────────────────────────── */
-function flightTransform(angle: number): { rot: number; flip: 1 | -1 } {
-  if (Math.abs(angle) <= 90) return { rot: angle, flip: 1 };
-  return { rot: angle > 0 ? angle - 180 : angle + 180, flip: -1 };
+/* ─── rotation math ────────────────────────────────────────────────────────
+   Rotation on inner div: translate(-50%,-50%) + rotate.
+   Flip (scaleX) lives on a separate wrapper div with a slow transition.
+   ─────────────────────────────────────────────────────────────────────── */
+function angleFlip(angle: number): 1 | -1 {
+  return Math.abs(angle) <= 90 ? 1 : -1;
+}
+function angleRot(angle: number, flip: 1 | -1): number {
+  if (flip === 1) return angle;
+  return angle > 0 ? angle - 180 : angle + 180;
 }
 
 /* ─── hero ─── */
 export default function Hero() {
-  const outerRef     = useRef<HTMLDivElement>(null);
-  const canvasRef    = useRef<HTMLCanvasElement>(null);
-  const svgRef       = useRef<SVGSVGElement>(null);
-  const pathRef      = useRef<SVGPathElement>(null);
-  const clipPathRef  = useRef<SVGPathElement>(null);
+  const outerRef      = useRef<HTMLDivElement>(null);
+  const canvasRef     = useRef<HTMLCanvasElement>(null);
+  const svgRef        = useRef<SVGSVGElement>(null);
+  const pathRef       = useRef<SVGPathElement>(null);
+  const clipPathRef   = useRef<SVGPathElement>(null);
 
-  /* plane: outer = position (instant), inner = rotation/scale (transitioned) */
+  /* plane: outer=position, flip=scaleX (slow), inner=rotation+center (fast) */
   const planeOuterRef = useRef<HTMLDivElement>(null);
+  const planeFlipRef  = useRef<HTMLDivElement>(null);
   const planeInnerRef = useRef<HTMLDivElement>(null);
 
-  const metricsRef   = useRef<{ total: number; seg: [number,number,number] } | null>(null);
-  const scrollPinRef = useRef(0);
-  const loadDoneRef  = useRef(false);
-  const typeTimerRef = useRef<ReturnType<typeof setInterval> | null>(null);
-  const wasParkedRef = useRef(true);  // starts parked at rest
+  const metricsRef    = useRef<{ total: number; seg: [number,number,number] } | null>(null);
+  const scrollPinRef  = useRef(0);
+  const loadDoneRef   = useRef(false);
+  const typeTimerRef  = useRef<ReturnType<typeof setInterval> | null>(null);
+  const wasParkedRef  = useRef(true);
+  const lastFlipRef   = useRef<1 | -1>(1);
 
-  /* react state (only for rendering) */
   const [activePin,  setActivePin]  = useState<number | null>(null);
   const [pinLabel,   setPinLabel]   = useState("");
   const [labelDone,  setLabelDone]  = useState(false);
   const [pulsingPin, setPulsingPin] = useState<number | null>(null);
   const [hoverPin,   setHoverPin]   = useState<number | null>(null);
   const [s,          setS]          = useState(1);
+  const [isMobile,   setIsMobile]   = useState(false);
 
   const reduced = useReducedMotion() ?? false;
 
-  /* ── stage scale ── */
+  /* ── viewport detection ── */
   useEffect(() => {
-    const fit = () => setS(Math.min(window.innerWidth / 1440, window.innerHeight / 720, 1.25));
-    fit();
-    window.addEventListener("resize", fit);
-    return () => window.removeEventListener("resize", fit);
+    const check = () => {
+      const m = window.innerWidth < 768;
+      setIsMobile(m);
+      if (!m) setS(Math.min(window.innerWidth / 1440, window.innerHeight / 720, 1.25));
+    };
+    check();
+    window.addEventListener("resize", check);
+    return () => window.removeEventListener("resize", check);
   }, []);
 
   /* ── path metrics ── */
@@ -195,13 +204,13 @@ export default function Hero() {
         ctx!.fillRect(x,y,DOT,DOT);
       }
       ctx!.globalAlpha=1;
-      if (e<3000) raf=requestAnimationFrame(frame); else drawFinal();
+      if (e<2000) raf=requestAnimationFrame(frame); else drawFinal();
     }
     raf = requestAnimationFrame(frame);
     return () => cancelAnimationFrame(raf);
   }, [reduced]);
 
-  /* ── load sequence: plane appears + LA pin shown after settle ── */
+  /* ── load sequence ── */
   useEffect(() => {
     if (reduced) {
       if (planeOuterRef.current) planeOuterRef.current.style.opacity = "1";
@@ -209,11 +218,12 @@ export default function Hero() {
       loadDoneRef.current = true;
       return;
     }
+    /* plane fades in at 0.8s; text appears at 1.2s+ (via FM delays) */
     const t = setTimeout(() => {
       if (planeOuterRef.current) planeOuterRef.current.style.opacity = "1";
       setActivePin(2);
       loadDoneRef.current = true;
-    }, 5200);
+    }, 800);
     return () => clearTimeout(t);
   }, [reduced]);
 
@@ -231,22 +241,22 @@ export default function Hero() {
 
   /* ── scroll: spring-smoothed progress → DOM updates ── */
   const { scrollYProgress } = useScroll({ target: outerRef, offset: ["start start","end end"] });
-  /* critically damped spring: no overshoot, no bounce */
-  const smoothP = useSpring(scrollYProgress, { stiffness: 90, damping: 30, mass: 1 });
+  const smoothP = useSpring(scrollYProgress, { stiffness: 60, damping: 30, mass: 1 });
 
   useMotionValueEvent(smoothP, "change", (p) => {
-    const pathEl  = pathRef.current;
-    const m       = metricsRef.current;
-    const outerEl = planeOuterRef.current;
-    const innerEl = planeInnerRef.current;
-    if (!pathEl || !m || !outerEl || !innerEl) return;
+    const pathEl   = pathRef.current;
+    const m        = metricsRef.current;
+    const outerEl  = planeOuterRef.current;
+    const flipEl   = planeFlipRef.current;
+    const innerEl  = planeInnerRef.current;
+    if (!pathEl || !m || !outerEl || !flipEl || !innerEl) return;
 
     const { total, seg } = m;
 
     /* ── distance + parked state ── */
     let dist: number;
     let parked = false;
-    let parkedPin = 0; // 0 = at rest, 1/2/3 = at pin
+    let parkedPin = 0;
 
     if (p <= P0) {
       dist = 0; parked = true; parkedPin = 0;
@@ -269,32 +279,42 @@ export default function Hero() {
     outerEl.style.left = `${pt.x}px`;
     outerEl.style.top  = `${pt.y}px`;
 
-    /* ── rotation + flip (transitioned, on inner) ── */
-    const justParked    = parked && !wasParkedRef.current;
-    const justDeparted  = !parked && wasParkedRef.current;
+    /* ── flip (slow, on flipEl) + rotation (fast, on innerEl) ── */
+    const justParked   = parked && !wasParkedRef.current;
+    const justDeparted = !parked && wasParkedRef.current;
     wasParkedRef.current = parked;
 
-    if (parked) {
-      /* landing: slow transition for smooth level-out */
-      if (justParked) {
-        innerEl.style.transition = `transform 480ms ${EASE_MOVE_CSS}`;
-      }
-      const flip = parkedPin === 0 ? 1 : PIN_FLIP[parkedPin - 1];
-      innerEl.style.transform = `translate(-50%, -50%) rotate(0deg) scaleX(${flip})`;
-    } else {
-      /* flight: quick tracking, or slightly longer right after departure */
-      const flyDur = justDeparted ? "320ms" : "160ms";
-      innerEl.style.transition = `transform ${flyDur} ${EASE_MOVE_CSS}`;
+    /* flip div always uses --dur-slow transition */
+    flipEl.style.transition = `transform ${DUR_SLOW_MS}ms ${EASE_MOVE_CSS}`;
 
+    if (parked) {
+      const parkFlip = parkedPin === 0 ? 1 : PIN_FLIP[parkedPin - 1];
+      flipEl.style.transform = `scaleX(${parkFlip})`;
+      lastFlipRef.current = parkFlip;
+
+      /* landing: slow rotate to level */
+      if (justParked) innerEl.style.transition = `transform ${DUR_SLOW_MS}ms ${EASE_MOVE_CSS}`;
+      innerEl.style.transform = `translate(-50%, -50%) rotate(0deg)`;
+    } else {
       const D   = 3;
       const pt1 = pathEl.getPointAtLength(Math.max(0, dist - D));
       const pt2 = pathEl.getPointAtLength(Math.min(total, dist + D));
       const angle = Math.atan2(pt2.y - pt1.y, pt2.x - pt1.x) * 180 / Math.PI;
-      const { rot, flip } = flightTransform(angle);
-      innerEl.style.transform = `translate(-50%, -50%) rotate(${rot}deg) scaleX(${flip})`;
+      const flip  = angleFlip(angle);
+      const rot   = angleRot(angle, flip);
+
+      /* update flip div if direction changed */
+      if (flip !== lastFlipRef.current || justDeparted) {
+        flipEl.style.transform = `scaleX(${flip})`;
+        lastFlipRef.current = flip;
+      }
+
+      /* rotation: short transition on departure, snappy during flight */
+      innerEl.style.transition = `transform ${justDeparted ? DUR_SLOW_MS : DUR_BASE_MS}ms ${EASE_MOVE_CSS}`;
+      innerEl.style.transform = `translate(-50%, -50%) rotate(${rot}deg)`;
     }
 
-    /* ── trail: reveals exactly up to current dist ── */
+    /* ── trail: revealed up to current dist, retracts on back-scroll ── */
     if (clipPathRef.current)
       clipPathRef.current.setAttribute("stroke-dasharray", `${dist} ${total - dist}`);
 
@@ -323,8 +343,120 @@ export default function Hero() {
     : (displayPin != null ? PINS.find(p=>p.num===displayPin)?.label ?? "" : "");
   const showCaret = scrollPinRef.current > 0 && !labelDone;
 
+  /* ─────────────────────────────────────────────────────────────────
+     MOBILE LAYOUT (<768px)
+  ───────────────────────────────────────────────────────────────── */
+  if (isMobile) {
+    return (
+      <div ref={outerRef} style={{ height: "350vh" }}>
+        <section
+          className="sticky top-0 w-full overflow-hidden"
+          style={{ height: "100vh", backgroundColor: "#e9e9e6", display: "flex", flexDirection: "column" }}
+        >
+          {/* flat blue wash */}
+          <div className="pointer-events-none absolute inset-0"
+            style={{ backgroundColor: "rgba(108,159,222,0.20)" }} />
+
+          {/* ── map strip: cropped to cols 20-108 (x:200–1080), fills width ── */}
+          <div style={{ position: "relative", width: "100%", height: 200, overflow: "hidden", flexShrink: 0 }}>
+            {/* white glow behind map */}
+            <div className="pointer-events-none absolute inset-0" style={{ zIndex: 2,
+              background: "radial-gradient(closest-side, rgba(255,255,255,0.65), rgba(255,255,255,0))",
+            }} />
+            <canvas
+              ref={canvasRef}
+              className="absolute"
+              aria-hidden="true"
+              style={{
+                top: 0, left: 0, zIndex: 1,
+                transformOrigin: "0 0",
+                /* scale(w/880) translateX(-200px): col-20 → left:0, col-108 → left:w */
+                transform: `scale(${typeof window !== "undefined" ? window.innerWidth / 880 : 0.426}) translateX(-200px)`,
+              }}
+            />
+            {/* SVG for path metrics — hidden but rendered so getTotalLength() works */}
+            <svg ref={svgRef} aria-hidden="true" style={{ position: "absolute", width: 0, height: 0, overflow: "hidden" }}>
+              <path ref={pathRef} d={PATH_D} fill="none" stroke="none" />
+              <path ref={clipPathRef} d={PATH_D} fill="none" stroke="none" strokeDasharray="0 9999" />
+            </svg>
+            {/* Pins on mobile — numbers only, no labels (insufficient space) */}
+            {PINS.map((pin) => {
+              const mw = typeof window !== "undefined" ? window.innerWidth : 375;
+              const mScale = mw / 880;
+              const px = (pin.x - 200) * mScale;
+              const py = (pin.y - MAP_TOP) * mScale;
+              return (
+                <div key={pin.num} className="absolute" style={{ left: px, top: py, zIndex: 20, transform: "translate(-50%,-50%)" }}>
+                  <span className="grid place-items-center rounded-full" style={{
+                    width: 22, height: 22, backgroundColor: pin.color,
+                    boxShadow: "0 0 0 6px #e9e9e6",
+                    fontFamily: "var(--font-mono)", fontSize: 11, fontWeight: 500,
+                    letterSpacing: "0.1em", color: "#ffffff",
+                  }}>
+                    {pin.num}
+                  </span>
+                </div>
+              );
+            })}
+          </div>
+
+          {/* ── text block ── */}
+          <div className="pointer-events-auto flex-1 flex flex-col justify-center px-6" style={{ zIndex: 10, position: "relative" }}>
+            <motion.h1
+              style={{
+                fontFamily: "var(--font-sans)", fontSize: 34, fontWeight: 600,
+                lineHeight: 1.1, letterSpacing: "-0.02em", color: "#211f1c",
+              }}
+              initial={reduced ? false : { opacity: 0 }}
+              animate={reduced ? {} : { opacity: 1 }}
+              transition={reduced ? {} : { duration: 0.6, delay: 1.2, ease: [0.4,0,0.2,1] }}
+            >
+              Shreya Shanmugam.
+            </motion.h1>
+
+            <motion.p
+              style={{ marginTop: 8, fontFamily: "var(--font-sans)", fontSize: 16, lineHeight: 1.6 }}
+              initial={reduced ? false : { opacity: 0, y: 12 }}
+              animate={reduced ? {} : { opacity: 1, y: 0 }}
+              transition={reduced ? {} : { duration: 0.6, delay: 1.6, ease }}
+            >
+              <span style={{ fontWeight: 400, color: "#211f1c" }}>Designing to make complex systems feel </span>
+              <span style={{ fontWeight: 700, color: "#3d6bc4" }}>simple</span>
+              <span style={{ fontWeight: 700, color: "#b3c3e5" }}>.</span>
+            </motion.p>
+
+            <motion.p
+              className="pointer-events-auto"
+              style={{ marginTop: 8, fontFamily: "var(--font-sans)", fontSize: 15, lineHeight: 1.6, color: "#434343" }}
+              initial={reduced ? false : { opacity: 0, y: 12 }}
+              animate={reduced ? {} : { opacity: 1, y: 0 }}
+              transition={reduced ? {} : { duration: 0.6, delay: 1.9, ease }}
+            >
+              <span style={{ fontWeight: 400 }}>Currently</span>{" "}
+              <span style={{ fontWeight: 700 }}>@</span>{" "}
+              <IntroLink href="/about">USC Iovine and Young Academy</IntroLink>{" "}
+              <span style={{ fontWeight: 400 }}>and</span>{" "}
+              <IntroLink href="/about">Marshall</IntroLink>
+              <span style={{ fontWeight: 700 }}>.</span><br />
+              <span style={{ fontWeight: 400 }}>Consulting</span>{" "}
+              <span style={{ fontWeight: 700 }}>@</span>{" "}
+              <IntroLink href="#disney">Disney Experiences</IntroLink>{" "}
+              <span style={{ fontWeight: 400 }}>with ProductSC, previously</span>{" "}
+              <span style={{ fontWeight: 700 }}>@</span>{" "}
+              <IntroLink href="#synechron">Synechron</IntroLink>
+              <span style={{ fontWeight: 700 }}>.</span>
+            </motion.p>
+          </div>
+        </section>
+      </div>
+    );
+  }
+
+  /* ─────────────────────────────────────────────────────────────────
+     DESKTOP LAYOUT (≥768px)
+  ───────────────────────────────────────────────────────────────── */
   return (
-    <div ref={outerRef} style={{ height: "300vh" }}>
+    <div ref={outerRef} style={{ height: "500vh" }}>
 
       <section
         className="sticky top-0 w-full overflow-hidden"
@@ -357,7 +489,7 @@ export default function Hero() {
             background: "radial-gradient(closest-side, rgba(255,255,255,0.82), rgba(255,255,255,0))",
           }} />
 
-          {/* ── trail SVG ── */}
+          {/* ── trail SVG — clip reveals path behind plane as it moves ── */}
           <svg
             ref={svgRef}
             className="absolute pointer-events-none"
@@ -389,25 +521,27 @@ export default function Hero() {
             />
           </svg>
 
-          {/* ── plane: outer = position (instant), inner = rotation+flip (transitioned) ── */}
+          {/* ── plane: outer=position, flip=scaleX (slow), inner=rotate+center (fast) ── */}
           <div
             ref={planeOuterRef}
             className="absolute pointer-events-none"
-            style={{
-              left: 695, top: 129,
-              zIndex: 10,
-              opacity: 0,
-              transition: "opacity 0.8s ease",
-            }}
+            style={{ left: 695, top: 129, zIndex: 10, opacity: 0, transition: "opacity 0.8s ease" }}
           >
+            {/* flip div: scaleX only, slow transition (--dur-slow) */}
             <div
-              ref={planeInnerRef}
-              style={{
-                transform: "translate(-50%, -50%) rotate(0deg) scaleX(1)",
-                transition: `transform 480ms ${EASE_MOVE_CSS}`,
-              }}
+              ref={planeFlipRef}
+              style={{ transform: "scaleX(1)", transition: `transform ${DUR_SLOW_MS}ms ${EASE_MOVE_CSS}` }}
             >
-              <Plane width={132} />
+              {/* inner div: translate+rotate, fast transition */}
+              <div
+                ref={planeInnerRef}
+                style={{
+                  transform: "translate(-50%, -50%) rotate(0deg)",
+                  transition: `transform ${DUR_BASE_MS}ms ${EASE_MOVE_CSS}`,
+                }}
+              >
+                <Plane width={132} />
+              </div>
             </div>
           </div>
 
@@ -423,7 +557,7 @@ export default function Hero() {
               }}
               initial={reduced ? false : { scale: 0.6, opacity: 0 }}
               animate={reduced ? {} : { scale: 1, opacity: 1 }}
-              transition={reduced ? {} : { duration: 0.6, delay: 3.8 + idx*0.12, ease }}
+              transition={reduced ? {} : { duration: 0.4, delay: 1.8 + idx*0.1, ease }}
               onMouseEnter={() => scrollPinRef.current === 0 && setHoverPin(pin.num)}
               onMouseLeave={() => setHoverPin(null)}
               aria-label={pin.label}
@@ -443,9 +577,10 @@ export default function Hero() {
                 }
                 style={{ width: 30, height: 30, border: `1px solid ${pin.color}` }}
               />
-              {/* number: white */}
+              {/* number circle — 6px paper-colour halo so map doesn't show through */}
               <span className="relative grid place-items-center rounded-full" style={{
                 width: 22, height: 22, backgroundColor: pin.color,
+                boxShadow: "0 0 0 6px #e9e9e6",
                 fontFamily: "var(--font-mono)", fontSize: 11, fontWeight: 500,
                 letterSpacing: "0.1em", color: "#ffffff", zIndex: 1,
               }}>
@@ -454,14 +589,14 @@ export default function Hero() {
             </motion.button>
           ))}
 
-          {/* ── pin labels: no triangle, 14px below bottom of outer ring ── */}
+          {/* ── pin labels: 14px below bottom of outer ring (15px radius + 14px gap = 29px from centre) ── */}
           {PINS.map(pin => displayPin !== pin.num ? null : (
             <div
               key={`lbl-${pin.num}`}
               className="pointer-events-none absolute"
               style={{
                 left: pin.x,
-                top: pin.y + 29,  /* 15px ring radius + 14px gap */
+                top: pin.y + 29,
                 transform: "translateX(-50%)",
                 zIndex: 30,
               }}
@@ -477,8 +612,7 @@ export default function Hero() {
                 {displayLabel}
                 {showCaret && (
                   <span style={{
-                    display: "inline-block",
-                    width: 1,
+                    display: "inline-block", width: 1,
                     animation: "hero-caret 0.7s step-end infinite",
                   }}>|</span>
                 )}
@@ -486,7 +620,7 @@ export default function Hero() {
             </div>
           ))}
 
-          {/* ── name block ── */}
+          {/* ── name block — starts at 1.2s, intro done by 2.4s ── */}
           <div className="pointer-events-none absolute w-full text-center" style={{ top: 230, zIndex: 20 }}>
             <motion.h1
               style={{
@@ -495,7 +629,7 @@ export default function Hero() {
               }}
               initial={reduced ? false : { opacity: 0 }}
               animate={reduced ? {} : { opacity: 1 }}
-              transition={reduced ? {} : { duration: 0.8, delay: 3.0, ease: [0.4,0,0.2,1] }}
+              transition={reduced ? {} : { duration: 0.7, delay: 1.2, ease: [0.4,0,0.2,1] }}
             >
               Shreya Shanmugam.
             </motion.h1>
@@ -504,7 +638,7 @@ export default function Hero() {
               style={{ marginTop: 10, fontFamily: "var(--font-sans)", fontSize: 18, lineHeight: 1.6 }}
               initial={reduced ? false : { opacity: 0, y: 16 }}
               animate={reduced ? {} : { opacity: 1, y: 0 }}
-              transition={reduced ? {} : { duration: 0.9, delay: 3.8, ease }}
+              transition={reduced ? {} : { duration: 0.6, delay: 1.7, ease }}
             >
               <span style={{ fontWeight: 400, color: "#211f1c" }}>Designing to make complex systems feel </span>
               <span style={{ fontWeight: 700, color: "#3d6bc4" }}>simple</span>
@@ -516,7 +650,7 @@ export default function Hero() {
               style={{ marginTop: 10, fontFamily: "var(--font-sans)", fontSize: 16, lineHeight: 1.6, color: "#434343" }}
               initial={reduced ? false : { opacity: 0, y: 16 }}
               animate={reduced ? {} : { opacity: 1, y: 0 }}
-              transition={reduced ? {} : { duration: 0.9, delay: 4.0, ease }}
+              transition={reduced ? {} : { duration: 0.6, delay: 2.0, ease }}
             >
               <span style={{ fontWeight: 400 }}>Currently</span>{" "}
               <span style={{ fontWeight: 700 }}>@</span>{" "}
