@@ -314,3 +314,8 @@ body {
   .hero-sky::before,
   .hero-sky::after { animation: none; }
 }
+
+@keyframes hero-caret {
+  0%, 100% { opacity: 1; }
+  50% { opacity: 0; }
+}
