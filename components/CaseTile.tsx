@@ -32,7 +32,7 @@ export default function CaseTile({
   const [hover, setHover] = useState(false);
 
   const shell =
-    "group flex flex-col overflow-hidden border border-grey-20 bg-grey-00 transition-[transform,box-shadow,border-color] duration-[--dur-base] ease-[--ease-move] hover:-translate-y-[3px] hover:border-grey-40 hover:shadow-[0_2px_8px_rgba(19,28,51,0.05)]";
+    "group h-full flex flex-col overflow-hidden border border-grey-20 bg-grey-00 transition-[transform,box-shadow,border-color] duration-[--dur-base] ease-[--ease-move] hover:-translate-y-[3px] hover:border-grey-40 hover:shadow-[0_2px_8px_rgba(19,28,51,0.05)]";
 
   const inner = (
     <>

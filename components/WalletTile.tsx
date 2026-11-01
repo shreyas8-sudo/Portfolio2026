@@ -53,7 +53,7 @@ export default function WalletTile() {
     OPEN_EXTRA;
 
   const shell =
-    "group flex flex-col overflow-hidden border border-grey-20 bg-grey-00 transition-[border-color] duration-[--dur-base] ease-[--ease-move] hover:border-grey-40";
+    "group h-full flex flex-col overflow-hidden border border-grey-20 bg-grey-00 transition-[border-color] duration-[--dur-base] ease-[--ease-move] hover:border-grey-40";
 
   const content = (
     <>
