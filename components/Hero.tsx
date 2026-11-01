@@ -102,9 +102,18 @@ export default function Hero() {
   const [pinLabel,   setPinLabel]   = useState("");
   const [labelDone,  setLabelDone]  = useState(false);
   const [pulsingPin, setPulsingPin] = useState<number | null>(null);
-  const [hoverPin,   setHoverPin]   = useState<number | null>(null); // hover when not scrolling
+  const [hoverPin,   setHoverPin]   = useState<number | null>(null);
+  const [s,          setS]          = useState(1);
 
   const reduced = useReducedMotion() ?? false;
+
+  /* ── stage scale: fit 1440×720 inside viewport, cap at 1.25× ── */
+  useEffect(() => {
+    const fit = () => setS(Math.min(window.innerWidth / 1440, window.innerHeight / 720, 1.25));
+    fit();
+    window.addEventListener("resize", fit);
+    return () => window.removeEventListener("resize", fit);
+  }, []);
 
   /* ── path metrics ── */
   useEffect(() => {
@@ -264,29 +273,30 @@ export default function Hero() {
         className="sticky top-0 w-full overflow-hidden"
         style={{ height: "100vh", backgroundColor: "#e9e9e6" }}
       >
-        {/* flat blue wash */}
+        {/* FULL-BLEED layers: always cover the whole viewport, no seams */}
         <div className="pointer-events-none absolute inset-0"
           style={{ backgroundColor: "rgba(108,159,222,0.20)" }} />
+        <div className="pointer-events-none absolute inset-0" style={{
+          background: "radial-gradient(ellipse at 50% 45%, transparent 35%, rgba(108,159,222,0.12) 100%)",
+        }} />
 
-        {/* 1440px content frame */}
-        <div className="pointer-events-none absolute"
-          style={{ left: "50%", transform: "translateX(-50%)", width: 1440, height: "100%" }}>
-
-          {/* pixel map */}
-          <canvas ref={canvasRef} className="absolute"
-            style={{ top: MAP_TOP, left: 0, zIndex: 1 }} aria-hidden="true" />
-
-          {/* edge darkening */}
-          <div className="pointer-events-none absolute inset-0" style={{
-            zIndex: 1,
-            background: "radial-gradient(ellipse 120% 110% at 50% 50%, transparent 30%, rgba(108,159,222,0.12) 100%)",
+        {/* STAGE: 1440×720 Figma frame, scaled to fit viewport and centred */}
+        <div className="absolute left-1/2 top-1/2" style={{
+          width: 1440, height: 720,
+          transform: `translate(-50%, -50%) scale(${s})`,
+          transformOrigin: "center",
+        }}>
+          {/* pixel map: left/right edges fade to transparent so the map never ends in a hard line */}
+          <canvas ref={canvasRef} className="absolute" aria-hidden="true" style={{
+            top: MAP_TOP, left: 0, zIndex: 1,
+            WebkitMaskImage: "linear-gradient(to right, transparent 0, #000 6%, #000 94%, transparent 100%)",
+            maskImage: "linear-gradient(to right, transparent 0, #000 6%, #000 94%, transparent 100%)",
           }} />
 
-          {/* white glow */}
+          {/* white glow: centred on the name block (Figma y ≈ 331), fades fully to 0 at its own edge */}
           <div className="pointer-events-none absolute" style={{
-            width: 1540, height: 642, left: "50%", top: "50%",
-            transform: "translate(-50%, -50%)", zIndex: 2,
-            background: "radial-gradient(ellipse 100% 100% at 50% 50%, rgba(255,255,255,0.82) 0%, rgba(255,255,255,0) 100%)",
+            width: 1540, height: 642, left: -50, top: 10, zIndex: 2,
+            background: "radial-gradient(closest-side, rgba(255,255,255,0.82), rgba(255,255,255,0))",
           }} />
 
           {/* ── trail SVG (below plane) ── */}
@@ -453,7 +463,7 @@ export default function Hero() {
             </motion.p>
           </div>
 
-        </div>{/* end content frame */}
+        </div>{/* end stage */}
       </section>
     </div>/* end outer */
   );
