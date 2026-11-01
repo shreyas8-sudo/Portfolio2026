@@ -68,18 +68,10 @@ export default function Hero() {
       className="relative w-full overflow-hidden"
       style={{ height: HERO_H, backgroundColor: "#e9e9e6" }}
     >
-      {/* Flat 20% blue wash over whole hero -- gives #d0dae4 periwinkle base */}
+      {/* Flat 20% blue wash -- uniform periwinkle at any viewport width */}
       <div
         className="pointer-events-none absolute inset-0"
         style={{ backgroundColor: "rgba(108,159,222,0.20)" }}
-      />
-      {/* Slight extra darkening at edges so they read bluer than centre */}
-      <div
-        className="pointer-events-none absolute inset-0"
-        style={{
-          background:
-            "radial-gradient(ellipse 120% 110% at 50% 50%, transparent 30%, rgba(108,159,222,0.12) 100%)",
-        }}
       />
 
       {/* 1440px content frame, centred */}
@@ -93,6 +85,16 @@ export default function Hero() {
           className="absolute"
           style={{ top: MAP_TOP, left: 0, zIndex: 1 }}
           aria-hidden="true"
+        />
+
+        {/* Layer 1b: edge darkening inside content frame -- stays content-relative */}
+        <div
+          className="pointer-events-none absolute inset-0"
+          style={{
+            zIndex: 1,
+            background:
+              "radial-gradient(ellipse 120% 110% at 50% 50%, transparent 30%, rgba(108,159,222,0.12) 100%)",
+          }}
         />
 
         {/* Layer 2: white radial glow above canvas, keeps text readable */}
