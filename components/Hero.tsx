@@ -56,8 +56,8 @@ function buildDots(): Dot[] {
         fy: row * CELL + (CELL - DOT) / 2,
         sx: Math.random() * 1440,
         sy: Math.random() * HERO_H,
-        flyStart: Math.random() * 400,
-        flyDur: 600 + Math.random() * 150,
+        flyStart: Math.random() * 600,
+        flyDur: 900 + Math.random() * 225,
         blinks: Array.from(
           { length: 3 + Math.floor(Math.random() * 3) },
           () => Math.random() * 500
@@ -154,7 +154,7 @@ export default function Hero() {
       }
       ctx!.globalAlpha = 1;
 
-      if (e < 1400) raf = requestAnimationFrame(frame);
+      if (e < 2100) raf = requestAnimationFrame(frame);
       else drawFinal();
     }
 
@@ -175,7 +175,7 @@ export default function Hero() {
           if (i < locked || ch === " " || ch === ".") return nameArr[i];
           return ALPHA[Math.floor(Math.random() * ALPHA.length)];
         }));
-      }, 40);
+      }, 60);
 
       nameArr.forEach((_, i) => {
         setTimeout(() => {
@@ -184,11 +184,11 @@ export default function Hero() {
             clearInterval(tick!);
             setNameDisp(NAME.split(""));
           }
-        }, i * 30);
+        }, i * 45);
       });
-    }, 1300);
+    }, 2000);
 
-    const t2 = setTimeout(() => { setActivePin(2); setPinsLive(true); }, 2500);
+    const t2 = setTimeout(() => { setActivePin(2); setPinsLive(true); }, 3800);
 
     return () => {
       clearTimeout(t1); clearTimeout(t2);
@@ -229,7 +229,7 @@ export default function Hero() {
           <motion.div
             initial={reduced ? false : { x: -2000, y: -80, rotate: -8, opacity: 0 }}
             animate={reduced ? {} : { x: 0, y: 0, rotate: 0, opacity: 1 }}
-            transition={reduced ? {} : { duration: 0.9, delay: 1.0, ease }}
+            transition={reduced ? {} : { duration: 1.35, delay: 1.5, ease }}
           >
             <Plane width={132} />
           </motion.div>
@@ -247,7 +247,7 @@ export default function Hero() {
             }}
             initial={reduced ? false : { scale: 0.6, opacity: 0 }}
             animate={reduced ? {} : { scale: 1, opacity: 1 }}
-            transition={reduced ? {} : { duration: 0.28, delay: 2.0 + idx * 0.06, ease }}
+            transition={reduced ? {} : { duration: 0.42, delay: 3.0 + idx * 0.09, ease }}
             onMouseEnter={() => pinsLive && setActivePin(pin.num)}
             onMouseLeave={() => pinsLive && setActivePin(null)}
             aria-label={pin.label}
@@ -295,7 +295,7 @@ export default function Hero() {
             }}
             initial={reduced ? false : { opacity: 0 }}
             animate={reduced ? {} : { opacity: 1 }}
-            transition={reduced ? {} : { duration: 0.16, delay: 1.3, ease: [0.4, 0, 0.2, 1] }}
+            transition={reduced ? {} : { duration: 0.24, delay: 2.0, ease: [0.4, 0, 0.2, 1] }}
           >
             {NAME.split("").map((ch, i) => (
               <span
@@ -312,7 +312,7 @@ export default function Hero() {
             style={{ marginTop: 10, fontFamily: "var(--font-sans)", fontSize: 18, lineHeight: 1.6 }}
             initial={reduced ? false : { opacity: 0, y: 16 }}
             animate={reduced ? {} : { opacity: 1, y: 0 }}
-            transition={reduced ? {} : { duration: 0.48, delay: 2.0, ease }}
+            transition={reduced ? {} : { duration: 0.72, delay: 3.0, ease }}
           >
             <span style={{ fontWeight: 400, color: "#211f1c" }}>Designing to make complex systems feel </span>
             <span style={{ fontWeight: 700, color: "#3d6bc4" }}>simple</span>
@@ -324,7 +324,7 @@ export default function Hero() {
             style={{ marginTop: 10, fontFamily: "var(--font-sans)", fontSize: 16, lineHeight: 1.6, color: "#434343" }}
             initial={reduced ? false : { opacity: 0, y: 16 }}
             animate={reduced ? {} : { opacity: 1, y: 0 }}
-            transition={reduced ? {} : { duration: 0.48, delay: 2.08, ease }}
+            transition={reduced ? {} : { duration: 0.72, delay: 3.12, ease }}
           >
             <span style={{ fontWeight: 400 }}>Currently</span>{" "}
             <span style={{ fontWeight: 700 }}>@</span>{" "}
