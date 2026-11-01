@@ -11,7 +11,7 @@ export const site = {
   beli: "https://beliapp.co/app/snackitupwshrey",
   status: "Open to full-time · 2027",
   signoff: "See you at the next gate.",
-  lastUpdated: "Aug 2026",
+  lastUpdated: "Nov 2026",
 } as const;
 
 /* --- landing hero waypoints (left / bottom / right of the name) --- */
