@@ -70,6 +70,13 @@
 
   /* --- layout --- */
   --container-content: 60rem; /* 960px — 67% of 1440 */
+
+  /* --- motion --- */
+  --dur-quick: 160ms;
+  --dur-base: 280ms;
+  --dur-slow: 480ms;
+  --ease-move: cubic-bezier(0.22, 1, 0.36, 1);
+  --ease-fade: cubic-bezier(0.4, 0, 0.2, 1);
 }
 
 /* ============================================================

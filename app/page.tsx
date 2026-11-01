@@ -1,8 +1,8 @@
-import Link from "next/link";
 import Hero from "@/components/Hero";
-import CaseCard from "@/components/CaseCard";
+import SelectedWork from "@/components/SelectedWork";
 import ArrowLink from "@/components/ArrowLink";
-import { caseStudies, layovers } from "@/lib/site";
+import Link from "next/link";
+import { layovers } from "@/lib/site";
 
 export default function Home() {
   const preview = layovers.slice(0, 4);
@@ -11,24 +11,7 @@ export default function Home() {
     <>
       <Hero />
 
-      {/* SELECTED WORK */}
-      <section id="work" className="container-content scroll-mt-28 pt-20">
-        <div className="flex items-center gap-4">
-          <h2
-            className="label text-[0.8125rem]"
-            style={{ color: "var(--color-blue)" }}
-          >
-            Selected work
-          </h2>
-          <span className="h-px flex-1 bg-grey-20" aria-hidden="true" />
-        </div>
-
-        <div className="mt-8 space-y-8">
-          {caseStudies.map((study) => (
-            <CaseCard key={study.slug} study={study} />
-          ))}
-        </div>
-      </section>
+      <SelectedWork />
 
       {/* LAYOVERS TEASER */}
       <section className="container-content pt-24">

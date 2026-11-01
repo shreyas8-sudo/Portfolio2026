@@ -3,6 +3,7 @@
 import { useEffect, useRef, useState } from "react";
 import Link from "next/link";
 import { motion, useReducedMotion, useScroll, useSpring, useMotionValueEvent } from "framer-motion";
+import { easeFade } from "@/lib/motion";
 import Plane from "./Plane";
 import { WORLD_COLS, WORLD_ROWS, WORLD_ROWS_DATA } from "@/lib/world-pixels";
 
@@ -40,7 +41,6 @@ const PINS = [
 
 /* ease-move CSS bezier string */
 const EASE_MOVE_CSS = "cubic-bezier(0.22, 1, 0.36, 1)";
-const EASE_FADE_CSS = "cubic-bezier(0.4, 0, 0.2, 1)";
 
 /* ─── ease-move LUT for canvas ─── */
 function makeLUT(p1x: number, p1y: number, p2x: number, p2y: number, n = 200) {
@@ -438,7 +438,7 @@ export default function Hero() {
                 }
                 transition={
                   pulsingPin === pin.num
-                    ? { duration: 0.48, ease: EASE_FADE_CSS }
+                    ? { duration: 0.48, ease: easeFade }
                     : { duration: 0 }
                 }
                 style={{ width: 30, height: 30, border: `1px solid ${pin.color}` }}
