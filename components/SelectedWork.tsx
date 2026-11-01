@@ -81,9 +81,9 @@ function TileTitle({ children, color = "#232322" }: { children: React.ReactNode;
    SYNECHRON + BASIS TILES
 ═══════════════════════════════════════════════════════ */
 function WorkTile({
-  company, role, status, statusColor, title, href, poster, video, arrow = "↗",
+  id, company, role, status, statusColor, title, href, poster, video, arrow = "↗",
 }: {
-  company: string; role: string; status: string; statusColor: string;
+  id?: string; company: string; role: string; status: string; statusColor: string;
   title: string; href: string; poster?: string; video?: string; arrow?: string;
 }) {
   const { over, setOver, reduced, dur, ease, shell } = useTileHover();
@@ -108,7 +108,10 @@ function WorkTile({
   };
 
   return (
-    <Link href={href} style={{ display: "block", ...shell() }}
+    <Link
+      id={id}
+      href={href}
+      style={{ display: "block", scrollMarginTop: "7rem", ...shell() }}
       onMouseEnter={enter} onMouseLeave={leave}
       onFocus={enter} onBlur={leave}
     >
@@ -180,7 +183,8 @@ function DisneyTile() {
 
   return (
     <div
-      style={{ display: "block", ...shell({ cursor: "default" }) }}
+      id="disney"
+      style={{ display: "block", scrollMarginTop: "7rem", ...shell({ cursor: "default" }) }}
       onMouseEnter={() => { setOver(true); startAnim(); }}
       onMouseLeave={() => { setOver(false); stopAnim(); }}
     >
@@ -199,17 +203,19 @@ function DisneyTile() {
           padding: "0 24px", textAlign: "center",
           y: textY,
         }}>
-          <span style={{
-            fontFamily: "var(--font-sans)", fontSize: 39, fontWeight: 600,
-            letterSpacing: "-0.025em", color: "#fcfcfb", lineHeight: 1.1, display: "block",
-          }}>
-            Disney<br />Experiences
-          </span>
+          {/* Logo — drop the real file at /public/media/disney/logo.svg */}
+          {/* eslint-disable-next-line @next/next/no-img-element */}
+          <img
+            src="/media/disney/logo.svg"
+            alt="Disney Experiences"
+            style={{ width: 240, height: "auto", display: "block" }}
+            draggable={false}
+          />
           <span style={{
             display: "block",
             fontFamily: "var(--font-mono)", fontSize: 11, fontWeight: 500,
             letterSpacing: "0.1em", color: "rgba(252,252,251,0.8)",
-            marginTop: 10, textTransform: "uppercase",
+            marginTop: 14, textTransform: "uppercase",
           }}>
             Case Study Coming Soon
           </span>
@@ -234,38 +240,43 @@ function DisneyTile() {
 
 /* Boarding pass stack — back to front */
 const PASSES = [
-  { name: "designathon", code: "DA118", descriptor: "design hackathon", bg: "#e0b33c", fg: "#232322" },
-  { name: "spotify widgets", code: "SP024", descriptor: "design challenge", bg: "#d97a2a", fg: "#fcfcfb" },
-  { name: "peinao", code: "PN101", descriptor: "side project", bg: "#1e2d50", fg: "#fcfcfb" },
-  { name: "mark", code: "MK001", descriptor: "branding", bg: "#3d6bc4", fg: "#fcfcfb" },
+  { name: "designathon", code: "DA118", descriptor: "runner-up, Framer track at CreateSC", bg: "#e0b33c", fg: "#232322" },
+  { name: "spotify widgets", code: "SP024", descriptor: "24-hour design challenge", bg: "#d97a2a", fg: "#fcfcfb" },
+  { name: "peinao", code: "PN101", descriptor: "allergen menu analyser", bg: "#1e2d50", fg: "#fcfcfb" },
+  { name: "mark", code: "MK001", descriptor: "learn choreography from video", bg: "#3d6bc4", fg: "#fcfcfb" },
 ] as const;
 
-const PASS_H      = 72;
-const COVER_REST  = 250;
-// At rest: mark anchored near bottom, others stacked 14px above it
-const REST_TOPS   = [134, 148, 162, 176] as const; // [designathon, spotify, peinao, mark]
-// On hover: designathon stays, others spread 72px below it
-const HOVER_TOPS  = [134, 206, 278, 350] as const;
-const COVER_HOVER = 350 + PASS_H + 36;            // = 458px
+const PASS_H     = 72;
+const COVER_H    = 250;
+const MARK_TOP   = COVER_H - PASS_H;     // 178 — mark always at bottom
+const PEEK       = 14;                    // px each card peeks above the one in front
+
+/* back → front (designathon, spotify, peinao, mark) */
+const REST_TOPS  = [
+  MARK_TOP - 3 * PEEK,   // designathon  136
+  MARK_TOP - 2 * PEEK,   // spotify      150
+  MARK_TOP - 1 * PEEK,   // peinao       164
+  MARK_TOP,              // mark         178 (stays)
+] as const;
+
+const HOVER_TOPS = [
+  MARK_TOP - 3 * PASS_H, // designathon  -38  (partially clips above cover)
+  MARK_TOP - 2 * PASS_H, // spotify       34
+  MARK_TOP - 1 * PASS_H, // peinao       106
+  MARK_TOP,              // mark         178  (stays put)
+] as const;
 
 function LayoversTile() {
-  const { over, setOver, reduced, dur, ease, shell } = useTileHover();
+  const { over, setOver, reduced, shell } = useTileHover();
 
   return (
     <Link href="/layovers" style={{ display: "block", ...shell() }}
       onMouseEnter={() => setOver(true)} onMouseLeave={() => setOver(false)}
       onFocus={() => setOver(true)} onBlur={() => setOver(false)}
     >
-      {/* Cover */}
-      <motion.div
-        initial={{ height: COVER_REST }}
-        animate={{ height: over && !reduced ? COVER_HOVER : COVER_REST }}
-        transition={{ duration: durBase, ease: easeMove }}
-        style={{ overflow: "hidden", position: "relative", background: "#f4f4f2" }}
-      >
+      {/* Cover — fixed height, overflow:hidden clips passes that spread above */}
+      <div style={{ height: COVER_H, overflow: "hidden", position: "relative", background: "#f4f4f2" }}>
         {PASSES.map((pass, i) => {
-          // Stagger from bottom (mark = i 3) up: mark first, peinao +40ms, spotify +80ms
-          // designathon doesn't move so delay doesn't matter
           const delay = (3 - i) * 0.04;
           return (
             <motion.div
@@ -307,32 +318,13 @@ function LayoversTile() {
             </motion.div>
           );
         })}
-
-        {/* +7 more stops — fades in on hover */}
-        <motion.div
-          initial={{ opacity: 0 }}
-          animate={{ opacity: over && !reduced ? 1 : 0 }}
-          transition={{ duration: durBase, ease: easeMove }}
-          style={{
-            position: "absolute",
-            left: 20, right: 20,
-            top: HOVER_TOPS[HOVER_TOPS.length - 1] + PASS_H + 12,
-            fontFamily: "var(--font-mono)", fontSize: 11, fontWeight: 500,
-            letterSpacing: "0.1em", color: "#a8a8a3",
-            textTransform: "uppercase",
-            borderTop: "1px dashed #d6d6d2",
-            paddingTop: 8,
-          }}
-        >
-          + 7 More Stops
-        </motion.div>
-      </motion.div>
+      </div>
 
       <TileBody>
         <MetaRow company="Layovers" status="11 Stops" statusColor="#3d6bc4" />
         <TileTitle>
           Side projects, experiments and challenges, between destinations&ensp;
-          <span style={{ color: "#3d6bc4" }}>→</span>
+          <span style={{ color: "#3d6bc4" }}>↗</span>
         </TileTitle>
       </TileBody>
     </Link>
@@ -360,6 +352,7 @@ export default function SelectedWork() {
       {/* 2×2 grid — 444px tiles, 24px gap; single column below 768px */}
       <div className="mt-8 grid grid-cols-1 md:grid-cols-2" style={{ gap: 24 }}>
         <WorkTile
+          id="synechron"
           company="Synechron" role="Product design intern"
           status="✈ Shipped 2026" statusColor="#d97a2a"
           title="Designed process intelligence for banks, and shipped a spec skill engineers now use"
