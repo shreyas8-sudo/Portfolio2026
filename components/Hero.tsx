@@ -27,7 +27,8 @@ function IntroLink({ href, children }: { href: string; children: React.ReactNode
 
 export default function Hero() {
   const canvasRef = useRef<HTMLCanvasElement>(null);
-  const [activePin, setActivePin] = useState<number | null>(null);
+  // Pin 2 (LA) label visible by default, matching Figma static state
+  const [activePin, setActivePin] = useState<number | null>(2);
 
   useEffect(() => {
     const canvas = canvasRef.current;
@@ -67,12 +68,17 @@ export default function Hero() {
       className="relative w-full overflow-hidden"
       style={{ height: HERO_H, backgroundColor: "#e9e9e6" }}
     >
-      {/* Blue radial wash -- stronger at edges for the bluish-grey effect */}
+      {/* Flat 20% blue wash over whole hero -- gives #d0dae4 periwinkle base */}
+      <div
+        className="pointer-events-none absolute inset-0"
+        style={{ backgroundColor: "rgba(108,159,222,0.20)" }}
+      />
+      {/* Slight extra darkening at edges so they read bluer than centre */}
       <div
         className="pointer-events-none absolute inset-0"
         style={{
           background:
-            "radial-gradient(ellipse 140% 110% at 50% 50%, transparent 20%, rgba(108,159,222,0.28) 100%)",
+            "radial-gradient(ellipse 120% 110% at 50% 50%, transparent 30%, rgba(108,159,222,0.12) 100%)",
         }}
       />
 
@@ -100,7 +106,7 @@ export default function Hero() {
             transform: "translate(-50%, -50%)",
             zIndex: 2,
             background:
-              "radial-gradient(ellipse 100% 100% at 50% 50%, rgba(255,255,255,0.90) 0%, rgba(255,255,255,0) 100%)",
+              "radial-gradient(ellipse 100% 100% at 50% 50%, rgba(255,255,255,0.82) 0%, rgba(255,255,255,0) 100%)",
           }}
         />
 
