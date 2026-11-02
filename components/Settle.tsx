@@ -2,49 +2,64 @@
 
 import { motion, useReducedMotion } from "framer-motion";
 
+const EASE_MOVE: [number, number, number, number] = [0.22, 1, 0.36, 1]; // --ease-move
+const EASE_FADE: [number, number, number, number] = [0.4, 0, 0.2, 1];  // --ease-fade
+
 /**
- * Elements drop in and settle, once, on load.
+ * Settle: fade + rise animation for page content.
  *
- * Deliberately restrained. A spring with a small overshoot reads as weight,
- * which is the point, but anything bouncier makes someone wait to read a
- * name they came here to read. Total is under half a second.
+ * Above fold (default): animates on mount.
+ * Below fold (viewport=true): animates once when 20% of the element is visible.
  *
- * Respects prefers-reduced-motion by rendering the final state immediately.
+ * prefers-reduced-motion: 160ms opacity-only fade.
  */
 export default function Settle({
   children,
   delay = 0,
-  distance = 18,
+  distance = 16,
   className,
   as = "div",
+  viewport = false,
 }: {
   children: React.ReactNode;
   delay?: number;
-  /** how far above its resting place it starts */
+  /** px to rise from; default 16 */
   distance?: number;
   className?: string;
-  /** so a settling element can still be a list item where one belongs */
   as?: "div" | "li";
+  viewport?: boolean;
 }) {
   const still = useReducedMotion();
   const Tag = as === "li" ? motion.li : motion.div;
-  const Plain = as === "li" ? "li" : "div";
 
-  if (still) return <Plain className={className}>{children}</Plain>;
+  const initial = { opacity: 0, y: still ? 0 : distance };
+  const show = { opacity: 1, y: 0 };
+  const transition = {
+    duration: still ? 0.16 : 0.48, // --dur-quick or --dur-slow
+    ease: still ? EASE_FADE : EASE_MOVE,
+    delay,
+  };
+
+  if (viewport) {
+    return (
+      <Tag
+        className={className}
+        initial={initial}
+        whileInView={show}
+        viewport={{ once: true, amount: 0.2 }}
+        transition={transition}
+      >
+        {children}
+      </Tag>
+    );
+  }
 
   return (
     <Tag
       className={className}
-      initial={{ opacity: 0, y: -distance }}
-      animate={{ opacity: 1, y: 0 }}
-      transition={{
-        type: "spring",
-        stiffness: 420,
-        damping: 26, // just under critical, so it overshoots once and settles
-        mass: 0.9,
-        delay,
-        opacity: { duration: 0.28, delay, ease: "easeOut" },
-      }}
+      initial={initial}
+      animate={show}
+      transition={transition}
     >
       {children}
     </Tag>

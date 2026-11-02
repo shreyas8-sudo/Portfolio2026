@@ -49,32 +49,31 @@ export default function AboutPage() {
         </div>
 
         <div className="mt-8 flex flex-col items-stretch gap-10 md:flex-row md:items-center">
-          <Settle delay={0.04} className="flex-1">
+          <Settle delay={0.04} distance={16} className="flex-1">
             <h2 className="text-title font-semibold text-grey-90">
               Hi! I&apos;m Shreya Shanmugam.
             </h2>
             <p className="mt-3 text-body-lg text-grey-60">{site.tagline}</p>
           </Settle>
-          <Settle delay={0.12} className="shrink-0">
+          <Settle delay={0.1} distance={16} className="shrink-0">
             <Headshot />
           </Settle>
         </div>
 
-        {/* three stops, introduced by the line that frames them */}
-        <Settle delay={0.2}>
+        {/* three stops */}
+        <Settle delay={0.16} distance={16}>
           <p className="mt-12 max-w-[56ch] text-body-lg text-grey-60">
             At a high level, here&apos;s where I&apos;ve been, where I am, and
             where I&apos;m going.
           </p>
         </Settle>
-        {/* the cards land last, one after another, left to right */}
         <ul className="mt-5 grid gap-4 md:grid-cols-3">
           {stops.map((s, i) => (
             <Settle
               key={s.n}
               as="li"
-              delay={0.28 + i * 0.07}
-              distance={14}
+              delay={0.22 + i * 0.06}
+              distance={16}
               className="group rounded-[--radius-card] border border-grey-20 bg-grey-00 px-5 py-5 transition-colors duration-300 hover:border-grey-40"
             >
               <div className="flex items-center gap-2.5">
@@ -91,28 +90,32 @@ export default function AboutPage() {
         </ul>
       </section>
 
-      {/* map */}
+      {/* map -- below fold, animates in on scroll */}
       <section className="container-content pt-16">
-        <p className="max-w-[56ch] text-body-lg text-grey-60">
-          More specifically, this is my map.
-        </p>
-        <div className="mt-6">
-          <TravelMap />
-        </div>
+        <Settle viewport distance={16}>
+          <p className="max-w-[56ch] text-body-lg text-grey-60">
+            More specifically, this is my map.
+          </p>
+          <div className="mt-6">
+            <TravelMap />
+          </div>
+        </Settle>
       </section>
 
-      {/* the record */}
+      {/* the record -- below fold, animates in on scroll */}
       <section className="container-content pt-16">
-        <div className="flex items-center gap-4">
-          <h3
-            className="label text-[0.8125rem]"
-            style={{ color: "var(--color-blue)" }}
-          >
-            The record
-          </h3>
-          <span className="h-px flex-1 bg-grey-20" aria-hidden="true" />
-        </div>
-        <TheRecord />
+        <Settle viewport distance={16}>
+          <div className="flex items-center gap-4">
+            <h3
+              className="label text-[0.8125rem]"
+              style={{ color: "var(--color-blue)" }}
+            >
+              The record
+            </h3>
+            <span className="h-px flex-1 bg-grey-20" aria-hidden="true" />
+          </div>
+          <TheRecord />
+        </Settle>
       </section>
     </PageIn>
   );

@@ -1,7 +1,7 @@
 "use client";
 
 import { useState } from "react";
-import { motion, AnimatePresence } from "framer-motion";
+import { motion, AnimatePresence, useReducedMotion } from "framer-motion";
 
 type Tab = "work" | "school" | "tools";
 
@@ -137,6 +137,13 @@ function Rows({ rows }: { rows: Row[] }) {
 
 export default function TheRecord() {
   const [tab, setTab] = useState<Tab>("work");
+  const still = useReducedMotion();
+
+  const enterT = still
+    ? { duration: 0.16, ease: [0.4, 0, 0.2, 1] }
+    : { duration: 0.28, ease: [0.22, 1, 0.36, 1] }; // --dur-base/--ease-move
+
+  const exitT = { duration: 0.16, ease: [0.4, 0, 0.2, 1] }; // --dur-quick/--ease-fade
 
   return (
     <div className="mt-6">
@@ -172,10 +179,16 @@ export default function TheRecord() {
         <AnimatePresence mode="wait">
           <motion.div
             key={tab}
-            initial={{ opacity: 0, y: 4 }}
-            animate={{ opacity: 1, y: 0 }}
-            exit={{ opacity: 0, y: -3 }}
-            transition={{ duration: 0.18, ease: "easeOut" }}
+            initial={{ opacity: 0, y: still ? 0 : 8 }}
+            animate={{
+              opacity: 1,
+              y: 0,
+              transition: enterT,
+            }}
+            exit={{
+              opacity: 0,
+              transition: exitT,
+            }}
           >
             {tab === "work" && <Rows rows={work} />}
             {tab === "school" && <Rows rows={school} />}
