@@ -1,10 +1,11 @@
 "use client";
 
 import { useEffect, useRef, useState } from "react";
-import { motion, AnimatePresence } from "framer-motion";
+import { motion, AnimatePresence, useReducedMotion } from "framer-motion";
 import type { Layover } from "@/lib/site";
 import Viewer from "./Viewer";
 
+/* ── touch detection ── */
 function useIsTouch() {
   const [touch, setTouch] = useState(false);
   useEffect(() => {
@@ -17,57 +18,62 @@ function useIsTouch() {
   return touch;
 }
 
+/* ── Ken Burns pan/scale variants (8 offsets so cards drift out of sync) ── */
+const KB: { scale: [number, number]; x: [string, string]; y: [string, string] }[] = [
+  { scale: [1, 1.06], x: ["0%", "-1.5%"],  y: ["0%", "-1%"]   },
+  { scale: [1.06, 1], x: ["-1.5%", "0%"],  y: ["-1%", "0%"]   },
+  { scale: [1, 1.06], x: ["0%", "1.5%"],   y: ["0%", "1%"]    },
+  { scale: [1.06, 1], x: ["1.5%", "0%"],   y: ["1%", "0%"]    },
+  { scale: [1, 1.06], x: ["-1%", "1%"],    y: ["0%", "-1.5%"] },
+  { scale: [1.06, 1], x: ["1%", "-1%"],    y: ["-1.5%", "0%"] },
+  { scale: [1, 1.06], x: ["0%", "-1%"],    y: ["1%", "-0.5%"] },
+  { scale: [1.06, 1], x: ["-1%", "0%"],    y: ["-0.5%", "1%"] },
+];
+
+/* ── Thumbnail: video (IO-driven) or Ken Burns image ── */
 function Thumb({
   item,
-  playing,
-  isTouch,
+  kbIdx,
+  reduced,
+  onVideoRef,
 }: {
   item: Layover;
-  playing: boolean;
-  isTouch: boolean;
+  kbIdx: number;
+  reduced: boolean;
+  onVideoRef: (el: HTMLVideoElement | null) => void;
 }) {
-  const vidRef = useRef<HTMLVideoElement>(null);
   const [imgErr, setImgErr] = useState(false);
-
-  useEffect(() => {
-    const v = vidRef.current;
-    if (!v) return;
-    if (playing && !isTouch) {
-      v.play().catch(() => {});
-    } else {
-      v.pause();
-      v.currentTime = 0;
-    }
-  }, [playing, isTouch]);
-
-  const scaleStyle = {
-    transform: playing && !isTouch ? "scale(1.02)" : "scale(1)",
-    transition: `transform var(--dur-base) var(--ease-move)`,
-    width: "100%",
-    height: "100%",
-    objectFit: "cover" as const,
-  };
+  const kb = KB[kbIdx % KB.length];
 
   return (
     <div className="relative aspect-[16/9] w-full overflow-hidden bg-grey-05">
       {item.video ? (
         <video
-          ref={vidRef}
+          ref={onVideoRef}
           src={item.video}
-          poster={item.thumb}
+          poster={item.poster ?? item.thumb}
           muted
           loop
           playsInline
           preload="metadata"
-          style={scaleStyle}
+          style={{ width: "100%", height: "100%", objectFit: "cover" }}
         />
       ) : !imgErr ? (
-        // eslint-disable-next-line @next/next/no-img-element
-        <img
+        /* eslint-disable-next-line @next/next/no-img-element */
+        <motion.img
           src={item.thumb}
           alt={item.name}
           onError={() => setImgErr(true)}
-          style={scaleStyle}
+          animate={reduced ? {} : { scale: kb.scale, x: kb.x, y: kb.y }}
+          transition={reduced ? {} : {
+            duration: 14,
+            ease: "easeInOut",
+            repeat: Infinity,
+            repeatType: "mirror",
+            delay: -(kbIdx % 8) * 1.75,
+          }}
+          style={{ width: "100%", height: "100%", objectFit: "cover" }}
+          draggable={false}
         />
       ) : (
         <span
@@ -83,28 +89,43 @@ function Thumb({
 
 const EASING: [number, number, number, number] = [0.22, 1, 0.36, 1];
 
-type ViewerState = {
-  item: Layover;
-  rect: DOMRect;
-};
+type ViewerState = { item: Layover; rect: DOMRect };
 
 export default function LayoverGrid({ items }: { items: Layover[] }) {
   const [expanded, setExpanded] = useState<string | null>(null);
   const [hovered, setHovered] = useState<string | null>(null);
   const [viewer, setViewer] = useState<ViewerState | null>(null);
   const isTouch = useIsTouch();
+  const reduced = useReducedMotion() ?? false;
 
   const liRefs = useRef<Map<string, HTMLLIElement>>(new Map());
   const triggerRef = useRef<HTMLElement | null>(null);
   const leaveTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const videoRefs = useRef<Map<string, HTMLVideoElement>>(new Map());
 
+  /* Esc collapses expanded card */
   useEffect(() => {
-    const onKey = (e: KeyboardEvent) => {
-      if (e.key === "Escape") setExpanded(null);
-    };
+    const onKey = (e: KeyboardEvent) => { if (e.key === "Escape") setExpanded(null); };
     window.addEventListener("keydown", onKey);
     return () => window.removeEventListener("keydown", onKey);
   }, []);
+
+  /* Single IntersectionObserver drives all video play/pause */
+  useEffect(() => {
+    if (reduced) return;
+    const observer = new IntersectionObserver(
+      (entries) => {
+        entries.forEach((entry) => {
+          const v = entry.target as HTMLVideoElement;
+          if (entry.isIntersecting) v.play().catch(() => {});
+          else v.pause();
+        });
+      },
+      { threshold: 0.25 },
+    );
+    videoRefs.current.forEach((v) => observer.observe(v));
+    return () => observer.disconnect();
+  }); // intentionally runs every render so newly mounted videos are observed
 
   const toggle = (flight: string, el: HTMLElement) => {
     setExpanded((prev) => {
@@ -121,38 +142,40 @@ export default function LayoverGrid({ items }: { items: Layover[] }) {
     setViewer({ item, rect });
   };
 
+  const openExternal = (url: string) => window.open(url, "_blank", "noreferrer");
+
   return (
     <>
       <ul
         className="mt-10 grid grid-cols-1 gap-5 sm:grid-cols-2 lg:grid-cols-3"
         style={{ gridAutoFlow: "dense" }}
       >
-        {items.map((item) => {
-          // Desktop: expand on hover. Touch: expand on tap.
+        {items.map((item, idx) => {
           const isOn = (!isTouch && hovered === item.flight) || (isTouch && expanded === item.flight);
-          const playing = isOn && !!item.video;
-          const isExternal = !!item.external;
+          /* "external only" = has external but no embed (embed takes priority for click) */
+          const externalOnly = !!item.external && !item.embed;
+          const hasAction = !!(item.embed || item.external);
+
+          const doOpen = (el: HTMLElement) => {
+            if (item.embed) openViewer(item, el);
+            else if (item.external) openExternal(item.external);
+          };
 
           const handleCardClick = (el: HTMLElement) => {
             if (isTouch) {
-              toggle(item.flight, el);
+              /* first tap expands; second tap opens */
+              if (expanded === item.flight) doOpen(el);
+              else toggle(item.flight, el);
               return;
             }
-            // Desktop: click opens content directly
-            if (item.embed) {
-              openViewer(item, el);
-            } else if (item.external) {
-              window.open(item.external, "_blank", "noreferrer");
-            } else {
-              // blurb-only card — nothing to open, just show on hover
-            }
+            doOpen(el);
           };
 
           return (
             <motion.li
               key={item.flight}
               layout
-              transition={{ duration: 0.28, ease: EASING }}
+              transition={reduced ? { duration: 0 } : { duration: 0.28, ease: EASING }}
               ref={(el) => {
                 if (el) liRefs.current.set(item.flight, el);
                 else liRefs.current.delete(item.flight);
@@ -165,7 +188,7 @@ export default function LayoverGrid({ items }: { items: Layover[] }) {
               }}
               onMouseLeave={() => {
                 if (isTouch) return;
-                leaveTimer.current = setTimeout(() => { setHovered(null); leaveTimer.current = null; }, 80);
+                leaveTimer.current = setTimeout(() => { setHovered(null); leaveTimer.current = null; }, 120);
               }}
             >
               <div
@@ -174,165 +197,130 @@ export default function LayoverGrid({ items }: { items: Layover[] }) {
                 aria-expanded={isOn}
                 onClick={(e) => handleCardClick(e.currentTarget)}
                 onKeyDown={(e) => {
-                  if (e.key === "Enter" || e.key === " ") {
-                    e.preventDefault();
-                    handleCardClick(e.currentTarget);
-                  }
+                  if (e.key === "Enter" || e.key === " ") { e.preventDefault(); handleCardClick(e.currentTarget); }
                 }}
                 className="flex h-full cursor-pointer flex-col overflow-hidden bg-grey-00"
                 style={{
                   border: `1px solid ${isOn ? "#a8a8a3" : "#d6d6d2"}`,
                   boxShadow: isOn ? "0 2px 8px rgba(19,28,51,0.05)" : "none",
-                  transform: "translateY(0)",
-                  cursor: !isTouch && (item.embed || item.external) ? "pointer" : "default",
+                  transform: isOn && !reduced ? "translateY(-3px)" : "translateY(0)",
+                  cursor: hasAction ? "pointer" : "default",
                   transition: `border-color var(--dur-base) var(--ease-move), box-shadow var(--dur-base) var(--ease-move), transform var(--dur-base) var(--ease-move)`,
                 }}
               >
-                <Thumb item={item} playing={playing} isTouch={isTouch} />
+                {/* thumbnail — video or Ken Burns image */}
+                <Thumb
+                  item={item}
+                  kbIdx={idx}
+                  reduced={reduced}
+                  onVideoRef={(el) => {
+                    if (el) videoRefs.current.set(item.flight, el);
+                    else videoRefs.current.delete(item.flight);
+                  }}
+                />
 
                 <div className="flex flex-1 flex-col px-4 py-3.5">
-                  {/* date + origin + toggle icon */}
+                  {/* meta row: date · origin · action icon */}
                   <div className="flex items-center gap-2">
-                    <span
-                      style={{
-                        fontFamily: "var(--font-mono)",
-                        fontWeight: 500,
-                        fontSize: "11px",
-                        textTransform: "uppercase",
-                        letterSpacing: "0.04em",
-                        color: "#3d6bc4",
-                      }}
-                    >
+                    <span style={{
+                      fontFamily: "var(--font-mono)", fontWeight: 500, fontSize: "11px",
+                      textTransform: "uppercase", letterSpacing: "0.04em", color: "#3d6bc4",
+                    }}>
                       {item.date}
                     </span>
                     <span className="flex-1" />
-                    <span
-                      style={{
-                        fontFamily: "var(--font-mono)",
-                        fontWeight: 500,
-                        fontSize: "11px",
-                        textTransform: "uppercase",
-                        letterSpacing: "0.04em",
-                        color: "#d97a2a",
-                      }}
-                    >
+                    <span style={{
+                      fontFamily: "var(--font-mono)", fontWeight: 500, fontSize: "11px",
+                      textTransform: "uppercase", letterSpacing: "0.04em", color: "#d97a2a",
+                    }}>
                       {item.origin}
                     </span>
-                    <button
-                      onClick={(e) => {
-                        e.stopPropagation();
-                        const card = e.currentTarget.closest('[role="button"]') as HTMLElement | null;
-                        if (isTouch) {
-                          toggle(item.flight, card ?? e.currentTarget);
-                        } else if (item.embed) {
-                          openViewer(item, card ?? e.currentTarget);
-                        } else if (item.external) {
-                          window.open(item.external, "_blank", "noreferrer");
-                        }
-                      }}
-                      aria-label={isOn ? "Collapse" : "Expand"}
-                      className="grid place-items-center"
-                      style={{
-                        width: "18px",
-                        height: "18px",
-                        border: "1px solid #d6d6d2",
-                        color: "#6e6e69",
-                        fontSize: "14px",
-                        lineHeight: 1,
-                        flexShrink: 0,
-                        background: "transparent",
-                        transition: `color var(--dur-base) var(--ease-move), border-color var(--dur-base) var(--ease-move)`,
-                      }}
-                    >
-                      {isOn ? "×" : "+"}
-                    </button>
+                    {hasAction && (
+                      <button
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          const card = e.currentTarget.closest('[role="button"]') as HTMLElement | null;
+                          doOpen(card ?? e.currentTarget);
+                        }}
+                        aria-label={externalOnly ? "Visit" : "Open"}
+                        className="grid place-items-center"
+                        style={{
+                          width: "18px", height: "18px",
+                          border: "1px solid #d6d6d2",
+                          color: "#6e6e69", fontSize: "13px", lineHeight: 1,
+                          flexShrink: 0, background: "transparent",
+                          transition: `color var(--dur-base) var(--ease-move), border-color var(--dur-base) var(--ease-move)`,
+                        }}
+                      >
+                        {externalOnly ? "↗" : "+"}
+                      </button>
+                    )}
                   </div>
 
                   {/* name */}
                   <p
-                    className="mt-1.5 flex items-baseline gap-1"
+                    className="mt-1.5"
                     style={{
-                      fontFamily: "var(--font-sans)",
-                      fontWeight: 500,
-                      fontSize: isOn ? "22px" : "14px",
-                      color: "#232322",
-                      transition: `font-size var(--dur-base) var(--ease-move)`,
+                      fontFamily: "var(--font-sans)", fontWeight: 500,
+                      fontSize: isOn ? "22px" : "14px", color: "#232322",
+                      transition: reduced ? "none" : `font-size var(--dur-base) var(--ease-move)`,
                     }}
                   >
                     {item.name}
-                    {isExternal && (
-                      <span style={{ fontSize: "12px", color: "#6e6e69" }} aria-hidden>
-                        ↗
-                      </span>
+                    {externalOnly && (
+                      <span style={{ fontSize: "11px", color: "#6e6e69", marginLeft: "4px" }} aria-hidden> ↗</span>
                     )}
                   </p>
 
                   {/* descriptor (collapsed only) */}
                   {!isOn && (
-                    <p
-                      className="mt-0.5"
-                      style={{ fontSize: "14px", color: "#6e6e69" }}
-                    >
+                    <p className="mt-0.5" style={{ fontSize: "14px", color: "#6e6e69" }}>
                       {item.descriptor}
                     </p>
                   )}
 
-                  {/* expanded content */}
+                  {/* expanded detail */}
                   <AnimatePresence initial={false}>
                     {isOn && (
                       <motion.div
                         initial={{ opacity: 0 }}
                         animate={{ opacity: 1 }}
                         exit={{ opacity: 0 }}
-                        transition={{ duration: 0.2 }}
-                        className="mt-2"
+                        transition={reduced ? { duration: 0 } : { duration: 0.2 }}
+                        className="mt-2 flex flex-col"
+                        style={{ gap: "8px" }}
                       >
                         {item.blurb && (
                           <p style={{ fontSize: "14px", color: "#6e6e69", lineHeight: 1.55 }}>
                             {item.blurb}
                           </p>
                         )}
-
-                        {/* touch-only action icons — desktop opens via card click */}
-                        {isTouch && (
-                          <div className="mt-4 flex gap-2">
-                            {item.embed && (
-                              <button
-                                onClick={(e) => { e.stopPropagation(); openViewer(item, e.currentTarget); }}
-                                aria-label="Open in viewer"
-                                className="grid place-items-center"
-                                style={{
-                                  width: "28px",
-                                  height: "28px",
-                                  border: "1px solid #d6d6d2",
-                                  color: "#3d6bc4",
-                                  fontSize: "16px",
-                                  background: "transparent",
-                                }}
-                              >
-                                +
-                              </button>
-                            )}
-                            {item.external && (
-                              <a
-                                href={item.external}
-                                target="_blank"
-                                rel="noreferrer"
-                                onClick={(e) => e.stopPropagation()}
-                                aria-label="Visit"
-                                className="grid place-items-center"
-                                style={{
-                                  width: "28px",
-                                  height: "28px",
-                                  border: "1px solid #d6d6d2",
-                                  color: "#3d6bc4",
-                                  fontSize: "13px",
-                                }}
-                              >
-                                ↗
-                              </a>
-                            )}
-                          </div>
+                        {item.meta && (
+                          <p style={{
+                            fontFamily: "var(--font-mono)", fontSize: "11px",
+                            color: "#6e6e69", letterSpacing: "0.02em",
+                          }}>
+                            {item.meta}
+                          </p>
+                        )}
+                        {hasAction && (
+                          <button
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              const card = e.currentTarget.closest('[role="button"]') as HTMLElement | null;
+                              doOpen(card ?? e.currentTarget);
+                            }}
+                            style={{
+                              alignSelf: "flex-start",
+                              fontFamily: "var(--font-mono)", fontSize: "11px", fontWeight: 500,
+                              letterSpacing: "0.06em", textTransform: "uppercase",
+                              color: "#3d6bc4", border: "1px solid #3d6bc4",
+                              padding: "4px 10px", background: "transparent",
+                              transition: `opacity var(--dur-base) var(--ease-move)`,
+                            }}
+                          >
+                            {externalOnly ? "visit ↗" : "open"}
+                          </button>
                         )}
                       </motion.div>
                     )}
@@ -344,7 +332,6 @@ export default function LayoverGrid({ items }: { items: Layover[] }) {
         })}
       </ul>
 
-      {/* viewer overlay -- always mounted, animated by open prop */}
       <Viewer
         open={!!viewer}
         item={viewer?.item ?? null}

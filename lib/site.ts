@@ -79,7 +79,7 @@ export const caseStudies: CaseStudy[] = [
     year: "2026",
     accent: "var(--color-synechron)",
     cover: {
-      poster: "/media/synechron/banner-poster.webp",
+      poster: "/media/synechron/banner-poster.jpg",
       video: "/media/synechron/banner.mp4",
     },
   },
@@ -95,7 +95,7 @@ export const caseStudies: CaseStudy[] = [
     year: "2025",
     accent: "var(--color-basis)",
     cover: {
-      poster: "/media/basis/banner-poster.webp",
+      poster: "/media/basis/banner-poster.jpg",
       video: "/media/basis/banner.mp4",
     },
   },
@@ -118,9 +118,13 @@ export type Layover = {
   descriptor: string;
   /** longer prose shown in expanded state */
   blurb?: string;
-  /** still image */
+  /** "role · tools" line shown in expanded state, mono 11px */
+  meta?: string;
+  /** still image / card cover */
   thumb: string;
-  /** optional loop that plays on desktop hover */
+  /** frame-1 poster for the video element */
+  poster?: string;
+  /** loop video — plays via IntersectionObserver when in view */
   video?: string;
   /** one or more embeds; single = no tab bar, multiple = tab bar */
   embed?: EmbedEntry[];
@@ -136,7 +140,9 @@ export const layovers: Layover[] = [
     date: "Fall 2026",
     descriptor: "learn choreography from video",
     blurb: "A product that helps dancers learn from video, built with Claude Code in a day.",
+    meta: "Design + build · Claude Code, Next.js",
     thumb: "/media/layovers/mark.webp",
+    poster: "/media/layovers/mark-demo-poster.jpg",
     video: "/media/layovers/mark-demo.mp4",
     embed: [
       { label: "Demo", url: "/media/layovers/mark-demo.mp4", kind: "video" },
@@ -151,6 +157,7 @@ export const layovers: Layover[] = [
     date: "Fall 2026",
     descriptor: "case competition pitch for Bumble",
     blurb: "A case competition for Bumble, from research to a pitch deck, built as a team.",
+    meta: "Strategy · Figma",
     thumb: "/media/layovers/bumble.webp",
     embed: [
       { label: "Deck", url: "https://embed.figma.com/proto/MMmLcrFqbBwAijYHbMOoxL/Bumble-Case-Comp--Group-2?node-id=24-896&scaling=contain&content-scaling=fixed&page-id=24%3A364&starting-point-node-id=24%3A896&embed-host=share", kind: "figma" },
@@ -163,7 +170,9 @@ export const layovers: Layover[] = [
     date: "Summer 2026",
     descriptor: "allergen menu analyser",
     blurb: "A menu analyser for allergens. A side project with a friend, built and shipped in a week.",
+    meta: "Design + build · Next.js, Claude API",
     thumb: "/media/layovers/peinao.webp",
+    poster: "/media/layovers/peinao-poster.jpg",
     video: "/media/layovers/peinao.mp4",
     embed: [
       { label: "Demo", url: "/media/layovers/peinao.mp4", kind: "video" },
@@ -177,7 +186,9 @@ export const layovers: Layover[] = [
     date: "Spring 2026",
     descriptor: "coffee and UX, in AR/VR",
     blurb: "An AR/VR build bringing my two favourite things together, coffee and UX, animated in After Effects.",
+    meta: "AR/VR · After Effects, Unity",
     thumb: "/media/layovers/arvr.webp",
+    poster: "/media/layovers/arvr-poster.jpg",
     video: "/media/layovers/arvr.mp4",
     embed: [{ url: "/media/layovers/arvr.mp4", kind: "video" }],
   },
@@ -188,7 +199,9 @@ export const layovers: Layover[] = [
     date: "Spring 2026",
     descriptor: "research-led strategy deck",
     blurb: "A slide deck built from initial research, as a strategy consultant for them.",
+    meta: "Strategy · Figma",
     thumb: "/media/layovers/irvins.webp",
+    poster: "/media/layovers/irvins-poster.jpg",
     video: "/media/layovers/irvins.mp4",
     embed: [
       { label: "Video", url: "/media/layovers/irvins.mp4", kind: "video" },
@@ -202,7 +215,9 @@ export const layovers: Layover[] = [
     date: "Spring 2026",
     descriptor: "marketing site for a furniture team",
     blurb: "Designed and shipped a marketing website for a furniture team's adaptable piece.",
+    meta: "Design + build · HTML, CSS",
     thumb: "/media/layovers/adaptable-furniture.webp",
+    poster: "/media/layovers/adaptable-furniture-poster.jpg",
     video: "/media/layovers/adaptable-furniture.mp4",
     embed: [{ url: "/media/layovers/adaptable-furniture.mp4", kind: "video" }],
     external: "https://github.com/xl0u1sx/Adaptable-Furniture-Website",
@@ -214,6 +229,7 @@ export const layovers: Layover[] = [
     date: "Spring 2026",
     descriptor: "runner-up, Framer track at CreateSC",
     blurb: "CreateSC: made an analogue experience digital. Placed runner-up in the Framer track.",
+    meta: "Design · Framer",
     thumb: "/media/layovers/designathon.webp",
     external: "https://devpost.com/software/letters-to-your-future-self",
   },
@@ -224,7 +240,9 @@ export const layovers: Layover[] = [
     date: "Fall 2025",
     descriptor: "24-hour design challenge",
     blurb: "Widgets that make a music streaming app customisable and easier to search. Rapid ideation to prototype in one day.",
+    meta: "Product design · Figma",
     thumb: "/media/layovers/spotify.webp",
+    poster: "/media/layovers/spotify-poster.jpg",
     video: "/media/layovers/spotify.mp4",
     embed: [
       { label: "Video", url: "/media/layovers/spotify.mp4", kind: "video" },
@@ -238,7 +256,9 @@ export const layovers: Layover[] = [
     date: "Summer 2025",
     descriptor: "website rebuild, tested with users",
     blurb: "An internship spent rebuilding a website: branding, navigation, and accessibility, tested with real users.",
+    meta: "Design + research · Webflow, Figma",
     thumb: "/media/layovers/fly-fearless.webp",
+    poster: "/media/layovers/fly-fearless-poster.jpg",
     video: "/media/layovers/fly-fearless.mp4",
     embed: [{ url: "/media/layovers/fly-fearless.mp4", kind: "video" }],
   },
@@ -249,6 +269,7 @@ export const layovers: Layover[] = [
     date: "Summer 2025",
     descriptor: "faculty dashboard for edtech",
     blurb: "An internship working on a faculty dashboard for education technology.",
+    meta: "Product design · Figma",
     thumb: "/media/layovers/neoboard.webp",
   },
   /* 11 */ {
