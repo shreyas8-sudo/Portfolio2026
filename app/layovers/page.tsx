@@ -18,7 +18,7 @@ export default function LayoversPage() {
           className="label text-[0.8125rem]"
           style={{ color: "var(--color-blue)" }}
         >
-          Layovers
+          Layovers &mdash; 11 Stops
         </h1>
         <span className="h-px flex-1 bg-grey-20" aria-hidden="true" />
       </div>

@@ -102,133 +102,170 @@ export const caseStudies: CaseStudy[] = [
 ];
 
 /* --- layovers --- */
+export type EmbedEntry = {
+  /** shown in the tab bar only when there are 2+ tabs */
+  label?: string;
+  url: string;
+  kind: "figma" | "site" | "video" | "image";
+};
+
 export type Layover = {
   flight: string;
   name: string;
   origin: "Personal" | "Client" | "Academic";
-  status: "Shipped" | "Concept" | "Ongoing" | "Runner-up";
   date: string;
-  blurb: string;
-  link?: { label: string; href: string };
-  /** still image, /media/layovers/<name>.webp */
+  /** short 3-5 word descriptor shown under the name in collapsed state */
+  descriptor: string;
+  /** longer prose shown in expanded state */
+  blurb?: string;
+  /** still image */
   thumb: string;
-  /** optional loop that plays on hover, /media/layovers/<name>.mp4 */
+  /** optional loop that plays on desktop hover */
   video?: string;
+  /** one or more embeds; single = no tab bar, multiple = tab bar */
+  embed?: EmbedEntry[];
+  /** opens in new tab, no viewer */
+  external?: string;
 };
 
 export const layovers: Layover[] = [
   {
+    flight: "MK001",
+    name: "mark",
+    origin: "Personal",
+    date: "Fall 2026",
+    descriptor: "learn choreography from video",
+    blurb: "A product that helps dancers learn from video, built with Claude Code in a day.",
+    thumb: "/media/layovers/mark.png",
+    embed: [
+      {
+        label: "Deck",
+        url: "https://www.figma.com/proto/AA2BeFWeFqZtioUBbC9Shs/Palantir-Design-Challenge--amin?node-id=108-156&scaling=scale-down&content-scaling=fixed&page-id=101%3A2",
+        kind: "figma",
+      },
+      {
+        label: "Live app",
+        url: "https://mark-neon-pi.vercel.app/",
+        kind: "site",
+      },
+    ],
+  },
+  {
     flight: "PN101",
     name: "peinao",
     origin: "Personal",
-    status: "Shipped",
     date: "Summer 2026",
+    descriptor: "allergen menu analyser",
     blurb:
-      "a menu analyser for allergens, a side project with a friend, built and shipped inside a week. i designed it, coded the front end, and put it online.",
-    link: { label: "live site", href: "https://peinao.vercel.app/" },
+      "A menu analyser for allergens. A side project with a friend, built and shipped in a week.",
     thumb: "/media/layovers/peinao.webp",
-  },
-  {
-    flight: "SP024",
-    name: "spotify widgets",
-    origin: "Academic",
-    status: "Concept",
-    date: "Fall 2025",
-    blurb:
-      "a 24-hour design challenge: widgets that make a music streaming app customisable and easier to search. rapid ideation to prototype in one day.",
-    link: { label: "the deck", href: "https://www.figma.com/deck/EpOi5smT18EfI0x6vkYyU7/ShreyaS_LavaLabs-Design-Challenge?node-id=1-113&scaling=min-zoom&content-scaling=fixed&page-id=0%3A1" },
-    thumb: "/media/layovers/spotify.webp",
-  },
-  {
-    flight: "FF302",
-    name: "fly fearless",
-    origin: "Client",
-    status: "Shipped",
-    date: "Summer 2025",
-    blurb:
-      "an internship spent rebuilding a website, branding, navigation, and accessibility, tested with real users.",
-    thumb: "/media/layovers/fly-fearless.webp",
-  },
-  {
-    flight: "DA118",
-    name: "designathon",
-    origin: "Academic",
-    status: "Runner-up",
-    date: "Spring 2026",
-    blurb:
-      "CreateSC: made an analogue experience digital. placed runner-up in the Framer track.",
-    link: { label: "devpost", href: "https://devpost.com/software/letters-to-your-future-self" },
-    thumb: "/media/layovers/designathon.webp",
-  },
-  {
-    flight: "FN205",
-    name: "adaptable furniture",
-    origin: "Academic",
-    status: "Shipped",
-    date: "Spring 2026",
-    blurb:
-      "designed and shipped a website for an innovative piece of furniture.",
-    link: { label: "github", href: "https://github.com/xl0u1sx/Adaptable-Furniture-Website" },
-    thumb: "/media/layovers/adaptable-furniture.webp",
+    embed: [{ url: "https://peinao.vercel.app/", kind: "site" }],
   },
   {
     flight: "AR440",
     name: "virtual coffee shop",
     origin: "Academic",
-    status: "Concept",
     date: "Spring 2026",
+    descriptor: "coffee and UX, in AR/VR",
     blurb:
-      "an AR/VR build bringing my two favourite things together: coffee and UX.",
-    link: {
-      label: "the walkthrough",
-      href: "https://drive.google.com/file/d/1hI8ek4EWsFlLlbvfx8jZCU0eX6Lfs8eq/view?usp=sharing",
-    },
+      "An AR/VR build bringing two favourite things together: coffee and UX.",
     thumb: "/media/layovers/arvr.webp",
     video: "/media/layovers/arvr.mp4",
-  },
-  {
-    flight: "NB218",
-    name: "neoboard",
-    origin: "Client",
-    status: "Shipped",
-    date: "Summer 2025",
-    blurb:
-      "an internship working on a faculty dashboard for education technology.",
-    thumb: "/media/layovers/neoboard.webp",
+    embed: [{ url: "/media/layovers/arvr.mp4", kind: "video" }],
   },
   {
     flight: "IR077",
     name: "irvins",
     origin: "Client",
-    status: "Shipped",
     date: "Spring 2026",
+    descriptor: "research-led strategy deck",
     blurb:
-      "a slide deck built from initial research, as a strategy consultant for them.",
-    link: { label: "the deck", href: "https://www.figma.com/proto/SCYh86VkthPFwhs3GGaAoj/Irvins?node-id=1-2" },
+      "A slide deck built from initial research, as a strategy consultant for them.",
     thumb: "/media/layovers/irvins.webp",
+    embed: [
+      {
+        url: "https://www.figma.com/proto/SCYh86VkthPFwhs3GGaAoj/Irvins?node-id=1-2",
+        kind: "figma",
+      },
+    ],
   },
-
-  /* the personal ones close the page */
+  {
+    flight: "DA118",
+    name: "designathon",
+    origin: "Academic",
+    date: "Spring 2026",
+    descriptor: "runner-up, Framer track at CreateSC",
+    blurb:
+      "CreateSC: made an analogue experience digital. Placed runner-up in the Framer track.",
+    thumb: "/media/layovers/designathon.webp",
+    external: "https://devpost.com/software/letters-to-your-future-self",
+  },
+  {
+    flight: "FN205",
+    name: "adaptable furniture",
+    origin: "Academic",
+    date: "Spring 2026",
+    descriptor: "marketing site, designed and shipped",
+    blurb: "Designed and shipped a marketing site for an innovative piece of furniture.",
+    thumb: "/media/layovers/adaptable-furniture.webp",
+    external: "https://github.com/xl0u1sx/Adaptable-Furniture-Website",
+  },
+  {
+    flight: "SP024",
+    name: "spotify widgets",
+    origin: "Academic",
+    date: "Fall 2025",
+    descriptor: "24-hour design challenge",
+    blurb:
+      "Widgets that make a music streaming app customisable and easier to search. Rapid ideation to prototype in one day.",
+    thumb: "/media/layovers/spotify.webp",
+    embed: [
+      {
+        url: "https://www.figma.com/deck/EpOi5smT18EfI0x6vkYyU7/ShreyaS_LavaLabs-Design-Challenge?node-id=1-113&scaling=min-zoom&content-scaling=fixed&page-id=0%3A1",
+        kind: "figma",
+      },
+    ],
+  },
+  {
+    flight: "FF302",
+    name: "fly fearless",
+    origin: "Client",
+    date: "Summer 2025",
+    descriptor: "website rebuild, tested with users",
+    blurb:
+      "An internship spent rebuilding a website: branding, navigation, and accessibility, tested with real users.",
+    thumb: "/media/layovers/fly-fearless.webp",
+  },
+  {
+    flight: "NB218",
+    name: "neoboard",
+    origin: "Client",
+    date: "Summer 2025",
+    descriptor: "faculty dashboard for edtech",
+    blurb: "An internship working on a faculty dashboard for education technology.",
+    thumb: "/media/layovers/neoboard.webp",
+  },
   {
     flight: "DN004",
     name: "dance",
     origin: "Personal",
-    status: "Ongoing",
-    date: "always",
+    date: "Always",
+    descriptor: "performed at Netflix × BFunk",
     blurb:
-      "trained in multiple styles, competed on a team for a while, and now i find a class wherever i am, hyderabad, la, even new york.",
+      "Trained in multiple styles and competed on a team. Got to perform as part of a Netflix × BFunk PR event for Best of the Best. Now I find a class wherever I am: Hyderabad, LA, New York.",
     thumb: "/media/layovers/dance.webp",
+    embed: [{ url: "/media/layovers/dance.webp", kind: "image" }],
   },
   {
     flight: "FD012",
     name: "food",
     origin: "Personal",
-    status: "Ongoing",
-    date: "always",
+    date: "Always",
+    descriptor: "ranked on beli, ten weeks in",
     blurb:
-      "recently started properly appreciating food through my beli. just finished my 10th week.",
-    link: { label: "follow along", href: "https://beliapp.co/app/snackitupwshrey" },
+      "Recently started properly appreciating food through my beli. Just finished my 10th week.",
     thumb: "/media/layovers/beli.webp",
+    external: "https://beliapp.co/app/snackitupwshrey",
   },
 ];
 

@@ -61,11 +61,11 @@
   /* --- spacing --- */
   --spacing-gutter: 1.5rem;
 
-  /* --- varied radii (uniform radius = template tell) --- */
-  --radius-sharp: 2px;
-  --radius-card: 10px;
-  --radius-panel: 14px;
-  --radius-tag: 16px;
+  /* --- radii: layovers page is all-sharp; only logo + pins stay round --- */
+  --radius-sharp: 0px;
+  --radius-card: 0px;
+  --radius-panel: 0px;
+  --radius-tag: 0px;
   --radius-pill: 999px;
 
   /* --- layout --- */
