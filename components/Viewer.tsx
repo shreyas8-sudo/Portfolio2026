@@ -99,7 +99,12 @@ export default function Viewer({ open, item, originRect, onClose, triggerRef }: 
 
   useEffect(() => setMounted(true), []);
 
-  const tabs = item?.embed ?? [];
+  /* When item has a hover video AND non-video embed tabs, put video tab last.
+     e.g. mark: [Demo(video), Deck, Live app] → [Deck, Live app, Demo] */
+  const rawTabs = item?.embed ?? [];
+  const tabs = item?.video && rawTabs.some((t) => t.kind !== "video")
+    ? [...rawTabs].sort((a, b) => (a.kind === "video" ? 1 : 0) - (b.kind === "video" ? 1 : 0))
+    : rawTabs;
   const current = tabs[tabIdx];
 
   /* reset tab on item change */
