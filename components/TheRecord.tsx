@@ -9,6 +9,11 @@ type Row = { year: string; org: string; role: string };
 
 const work: Row[] = [
   {
+    year: "Now",
+    org: "Disney Experiences",
+    role: "Product design consultant · via ProductSC",
+  },
+  {
     year: "2026",
     org: "Synechron",
     role: "UI/UX Product Design Intern · NYC",

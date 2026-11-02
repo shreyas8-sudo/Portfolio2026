@@ -48,12 +48,14 @@ export default function TravelMap() {
   const [view, setView] = useState<View>({ k: 1, x: 0, y: 0 });
   const [dragging, setDragging] = useState(false);
   const [narrow, setNarrow] = useState(false);
+  const [hadSelected, setHadSelected] = useState(false);
   const svgRef = useRef<SVGSVGElement>(null);
   const drag = useRef<{ x: number; y: number; ox: number; oy: number } | null>(
     null
   );
   const pointers = useRef(new Map<number, { x: number; y: number }>());
   const pinch = useRef<{ dist: number; ux: number; uy: number } | null>(null);
+  const shotDirRef = useRef(0);
   const still = useReducedMotion();
 
   /* mobile detection for label visibility */
@@ -245,6 +247,8 @@ export default function TravelMap() {
 
   const focus = (p: Place) => {
     const xy = project(p.lon, p.lat);
+    shotDirRef.current = 0;
+    setHadSelected(true);
     setSelected((s) => (s?.name === p.name ? null : p));
     setShot(0);
     if (!xy) return;
@@ -263,6 +267,9 @@ export default function TravelMap() {
     ? { duration: 0.16, ease: EASE_FADE }
     : { duration: 0.28, ease: EASE_MOVE }; // --dur-base/--ease-move
   const outT = { duration: 0.16, ease: EASE_FADE }; // --dur-quick/--ease-fade
+  const slowT = still
+    ? { duration: 0.16, ease: EASE_FADE }
+    : { duration: 0.45, ease: EASE_MOVE }; // --dur-slow/--ease-move
 
   return (
     <div className="overflow-hidden rounded-[--radius-panel] border border-grey-20 bg-gradient-to-br from-[#0f1626] via-[#16203a] to-[#22314f]">
@@ -422,13 +429,13 @@ export default function TravelMap() {
           </p>
 
           <div className="absolute right-3 top-3 z-20 w-[42%] max-w-[10.5rem] md:hidden">
-            <Seat compact inT={inT} outT={outT} />
+            <Seat compact inT={inT} outT={outT} slowT={slowT} />
           </div>
         </div>
 
         {/* panel */}
         <div className="hidden flex-col items-center justify-center gap-4 border-white/10 p-6 md:flex md:border-l">
-          <Seat inT={inT} outT={outT} />
+          <Seat inT={inT} outT={outT} slowT={slowT} />
         </div>
       </div>
     </div>
@@ -438,21 +445,24 @@ export default function TravelMap() {
     compact = false,
     inT,
     outT,
+    slowT,
   }: {
     compact?: boolean;
     inT: { duration: number; ease: number[] };
     outT: { duration: number; ease: number[] };
+    slowT: { duration: number; ease: number[] };
   }) {
     const shots = selected ? photosOf(selected) : [];
 
     return (
       <div className="w-full">
         <Window>
-          <AnimatePresence mode="wait">
-            {!selected ? (
+          {/* Empty prompt — shown before any pin is ever selected */}
+          <AnimatePresence>
+            {!selected && !hadSelected && (
               <motion.div
                 key="empty"
-                className="grid size-full place-items-center"
+                className="absolute inset-0 grid place-items-center"
                 initial={{ opacity: 0 }}
                 animate={{ opacity: 1, transition: inT }}
                 exit={{ opacity: 0, transition: outT }}
@@ -463,24 +473,67 @@ export default function TravelMap() {
                   {compact ? "Tap a pin" : "Click on any pin!"}
                 </span>
               </motion.div>
-            ) : (
+            )}
+          </AnimatePresence>
+
+          {/* Photos — crossfade with direction-aware x offset for thumbnails */}
+          <AnimatePresence mode="popLayout">
+            {selected && (
               <motion.div
                 key={`${selected.name}-${shot}`}
-                className="size-full"
-                initial={{ opacity: 0, y: still ? 0 : 8 }}
-                animate={{ opacity: 1, y: 0, transition: inT }}
-                exit={{ opacity: 0, transition: outT }}
+                className="absolute inset-0 overflow-hidden"
+                initial={{
+                  opacity: 0,
+                  scale: still ? 1 : 1.12,
+                  filter: still ? "blur(0px)" : "blur(6px)",
+                  x: still ? "0%" : `${shotDirRef.current * 4}%`,
+                }}
+                animate={{
+                  opacity: 1,
+                  scale: 1,
+                  filter: "blur(0px)",
+                  x: "0%",
+                  transition: slowT,
+                }}
+                exit={{
+                  opacity: 0,
+                  x: still ? "0%" : `${-shotDirRef.current * 4}%`,
+                  transition: outT,
+                }}
               >
-                <PlacePhoto
-                  src={shots[shot] ?? shots[0]}
-                  alt={selected.name}
-                />
+                {/* 8% wider than glass; drifts translateX 0% → -3% like a moving-plane view */}
+                <motion.div
+                  className="absolute top-0 h-full"
+                  style={{ width: "108%", left: "-4%" }}
+                  animate={still ? {} : { x: ["0%", "-3%"] }}
+                  transition={{
+                    duration: 12,
+                    ease: "easeInOut",
+                    repeat: Infinity,
+                    repeatType: "mirror",
+                  }}
+                >
+                  <PlacePhoto
+                    src={shots[shot] ?? shots[0]}
+                    alt={selected.name}
+                  />
+                </motion.div>
               </motion.div>
             )}
           </AnimatePresence>
+
+          {/* Window shade — cream overlay that slides up to reveal, down to cover */}
+          {hadSelected && !still && (
+            <motion.div
+              className="absolute inset-0 z-10 pointer-events-none"
+              style={{ backgroundColor: "#e9e6df" }}
+              animate={{ y: selected ? "-100%" : "0%" }}
+              transition={selected ? slowT : inT}
+            />
+          )}
         </Window>
 
-        {/* multi-shot thumbnails */}
+        {/* Multi-shot thumbnails */}
         {selected && shots.length > 1 && (
           <div
             className={`flex justify-center ${compact ? "mt-1.5 gap-1" : "mt-3 gap-1.5"}`}
@@ -488,13 +541,16 @@ export default function TravelMap() {
             {shots.map((src, i) => (
               <button
                 key={src}
-                onClick={() => setShot(i)}
+                onClick={() => {
+                  shotDirRef.current = i > shot ? 1 : -1;
+                  setShot(i);
+                }}
                 aria-label={`Photo ${i + 1}`}
-                className={`overflow-hidden rounded-[3px] border transition-opacity ${
+                className={`overflow-hidden border transition-opacity ${
                   compact ? "size-5" : "size-10"
                 } ${
                   i === shot
-                    ? "border-white/40 opacity-100"
+                    ? "border-[#fcfcfb] opacity-100"
                     : "border-white/10 opacity-50 hover:opacity-80"
                 }`}
               >
@@ -512,7 +568,7 @@ export default function TravelMap() {
           </div>
         )}
 
-        {/* place info: cross-fades when pin changes */}
+        {/* Place info: cross-fades when pin changes */}
         <AnimatePresence mode="wait">
           {selected && (
             <motion.div
