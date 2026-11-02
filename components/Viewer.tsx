@@ -26,7 +26,6 @@ function EmbedPane({ entry, onOriginal }: { entry: EmbedEntry; onOriginal: () =>
   if (entry.kind === "video") {
     return (
       <video
-        key={entry.url}
         src={entry.url}
         controls
         autoPlay
@@ -84,50 +83,60 @@ function EmbedPane({ entry, onOriginal }: { entry: EmbedEntry; onOriginal: () =>
 }
 
 type ViewerProps = {
-  item: Layover;
-  originRect: DOMRect;
+  open: boolean;
+  item: Layover | null;
+  originRect: DOMRect | null;
   onClose: () => void;
   triggerRef: React.RefObject<HTMLElement | null>;
 };
 
-export default function Viewer({ item, originRect, onClose, triggerRef }: ViewerProps) {
+export default function Viewer({ open, item, originRect, onClose, triggerRef }: ViewerProps) {
+  const [mounted, setMounted] = useState(false);
   const [tabIdx, setTabIdx] = useState(0);
-  const tabs = item.embed ?? [];
-  const current = tabs[tabIdx];
-
   const closeRef = useRef<HTMLButtonElement>(null);
 
-  /* lock body scroll */
+  useEffect(() => setMounted(true), []);
+
+  const tabs = item?.embed ?? [];
+  const current = tabs[tabIdx];
+
+  /* reset tab on item change */
   useEffect(() => {
+    setTabIdx(0);
+  }, [item?.flight]);
+
+  /* lock body scroll when open */
+  useEffect(() => {
+    if (!open) return;
     const prev = document.body.style.overflow;
     document.body.style.overflow = "hidden";
     return () => {
       document.body.style.overflow = prev;
     };
-  }, []);
+  }, [open]);
 
-  /* focus close button on open */
+  /* focus close on open */
   useEffect(() => {
-    closeRef.current?.focus();
-  }, []);
+    if (open) closeRef.current?.focus();
+  }, [open]);
 
-  /* Esc to close */
+  /* Esc */
   useEffect(() => {
     const onKey = (e: KeyboardEvent) => {
-      if (e.key === "Escape") {
+      if (e.key === "Escape" && open) {
         onClose();
         triggerRef.current?.focus();
       }
     };
     window.addEventListener("keydown", onKey);
     return () => window.removeEventListener("keydown", onKey);
-  }, [onClose, triggerRef]);
+  }, [open, onClose, triggerRef]);
 
-  /* origin offset for scale animation */
+  /* origin-based scale animation */
   const vpCx = typeof window !== "undefined" ? window.innerWidth / 2 : 0;
   const vpCy = typeof window !== "undefined" ? window.innerHeight / 2 : 0;
-  const cardCx = originRect.x + originRect.width / 2;
-  const cardCy = originRect.y + originRect.height / 2;
+  const cardCx = (originRect?.x ?? vpCx) + (originRect?.width ?? 0) / 2;
+  const cardCy = (originRect?.y ?? vpCy) + (originRect?.height ?? 0) / 2;
   const offsetX = cardCx - vpCx;
   const offsetY = cardCy - vpCy;
 
@@ -135,140 +144,137 @@ export default function Viewer({ item, originRect, onClose, triggerRef }: Viewer
     if (current) window.open(current.url, "_blank", "noreferrer");
   };
 
+  if (!mounted) return null;
+
   return createPortal(
     <AnimatePresence>
-      <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
-        {/* scrim */}
-        <motion.div
-          className="absolute inset-0"
-          style={{ background: "rgba(19,28,51,0.55)" }}
-          initial={{ opacity: 0 }}
-          animate={{ opacity: 1 }}
-          exit={{ opacity: 0 }}
-          transition={{ duration: 0.28, ease: "easeOut" }}
-          onClick={() => {
-            onClose();
-            triggerRef.current?.focus();
-          }}
-          aria-hidden
-        />
+      {open && item && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
+          {/* scrim */}
+          <motion.div
+            className="absolute inset-0"
+            style={{ background: "rgba(19,28,51,0.55)" }}
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            exit={{ opacity: 0 }}
+            transition={{ duration: 0.28, ease: "easeOut" }}
+            onClick={() => {
+              onClose();
+              triggerRef.current?.focus();
+            }}
+            aria-hidden
+          />
 
-        {/* window */}
-        <motion.div
-          className="relative flex flex-col overflow-hidden"
-          style={{
-            width: "min(960px, calc(100vw - 16px))",
-            maxHeight: "calc(100vh - 32px)",
-            boxShadow: "0 12px 32px rgba(19,28,51,0.14)",
-            background: "#fcfcfb",
-          }}
-          initial={{ opacity: 0, scale: 0.15, x: offsetX, y: offsetY }}
-          animate={{ opacity: 1, scale: 1, x: 0, y: 0 }}
-          exit={{ opacity: 0, scale: 0.85, x: offsetX * 0.4, y: offsetY * 0.4 }}
-          transition={{
-            duration: 0.48,
-            ease: [0.22, 1, 0.36, 1],
-          }}
-          role="dialog"
-          aria-modal
-          aria-label={item.name}
-        >
-          {/* top bar */}
-          <div
-            className="flex shrink-0 items-center gap-3 border-b px-4"
-            style={{ height: "44px", borderColor: "#d6d6d2" }}
+          {/* window */}
+          <motion.div
+            className="relative flex flex-col overflow-hidden"
+            style={{
+              width: "min(960px, calc(100vw - 16px))",
+              maxHeight: "calc(100vh - 32px)",
+              boxShadow: "0 12px 32px rgba(19,28,51,0.14)",
+              background: "#fcfcfb",
+            }}
+            initial={{ opacity: 0, scale: 0.15, x: offsetX, y: offsetY }}
+            animate={{ opacity: 1, scale: 1, x: 0, y: 0 }}
+            exit={{ opacity: 0, scale: 0.85 }}
+            transition={{ duration: 0.48, ease: [0.22, 1, 0.36, 1] }}
+            role="dialog"
+            aria-modal
+            aria-label={item.name}
           >
-            <span
-              style={{
-                fontFamily: "var(--font-mono)",
-                fontSize: "11px",
-                fontWeight: 500,
-                color: "#a8a8a3",
-                letterSpacing: "0.08em",
-                textTransform: "uppercase",
-              }}
+            {/* top bar */}
+            <div
+              className="flex shrink-0 items-center gap-3 border-b px-4"
+              style={{ height: "44px", borderColor: "#d6d6d2" }}
             >
-              {item.flight}
-            </span>
-
-            <span
-              style={{
-                fontFamily: "var(--font-sans)",
-                fontSize: "13px",
-                fontWeight: 500,
-                color: "#232322",
-              }}
-            >
-              {item.name}
-            </span>
-
-            {/* tabs (only when multiple embeds) */}
-            {tabs.length > 1 && (
-              <div className="flex gap-1">
-                {tabs.map((t, i) => (
-                  <button
-                    key={t.label}
-                    onClick={() => setTabIdx(i)}
-                    className="px-3 py-1 text-xs"
-                    style={{
-                      fontFamily: "var(--font-mono)",
-                      fontWeight: 500,
-                      color: i === tabIdx ? "#3d6bc4" : "#a8a8a3",
-                      borderBottom: i === tabIdx ? "2px solid #3d6bc4" : "2px solid transparent",
-                      transition: "color 0.2s, border-color 0.2s",
-                    }}
-                  >
-                    {t.label}
-                  </button>
-                ))}
-              </div>
-            )}
-
-            <span className="flex-1" />
-
-            {/* open original */}
-            {current && (
-              <button
-                onClick={openOriginal}
-                className="flex items-center gap-1 text-xs"
-                style={{ color: "#3d6bc4", fontFamily: "var(--font-mono)" }}
+              <span
+                style={{
+                  fontFamily: "var(--font-mono)",
+                  fontSize: "11px",
+                  fontWeight: 500,
+                  color: "#a8a8a3",
+                  letterSpacing: "0.08em",
+                  textTransform: "uppercase",
+                }}
               >
-                open original <span aria-hidden>↗</span>
-              </button>
-            )}
+                {item.flight}
+              </span>
 
-            {/* close */}
-            <button
-              ref={closeRef}
-              onClick={() => {
-                onClose();
-                triggerRef.current?.focus();
-              }}
-              className="flex size-8 items-center justify-center border text-sm"
-              style={{ border: "1px solid #d6d6d2", color: "#232322" }}
-              aria-label="Close"
-            >
-              ✕
-            </button>
-          </div>
+              <span
+                style={{
+                  fontFamily: "var(--font-sans)",
+                  fontSize: "13px",
+                  fontWeight: 500,
+                  color: "#232322",
+                }}
+              >
+                {item.name}
+              </span>
 
-          {/* content area: 16:10 */}
-          <div
-            className="relative w-full"
-            style={{ paddingBottom: "62.5%" /* 10/16 */ }}
-          >
-            <div className="absolute inset-0">
-              {current && (
-                <EmbedPane
-                  key={`${item.flight}-${tabIdx}`}
-                  entry={current}
-                  onOriginal={openOriginal}
-                />
+              {/* tabs */}
+              {tabs.length > 1 && (
+                <div className="flex gap-1">
+                  {tabs.map((t, i) => (
+                    <button
+                      key={t.label ?? i}
+                      onClick={() => setTabIdx(i)}
+                      className="px-3 py-1 text-xs"
+                      style={{
+                        fontFamily: "var(--font-mono)",
+                        fontWeight: 500,
+                        color: i === tabIdx ? "#3d6bc4" : "#a8a8a3",
+                        borderBottom:
+                          i === tabIdx ? "2px solid #3d6bc4" : "2px solid transparent",
+                        transition: "color 0.2s, border-color 0.2s",
+                      }}
+                    >
+                      {t.label}
+                    </button>
+                  ))}
+                </div>
               )}
+
+              <span className="flex-1" />
+
+              {current && (
+                <button
+                  onClick={openOriginal}
+                  className="flex items-center gap-1 text-xs"
+                  style={{ color: "#3d6bc4", fontFamily: "var(--font-mono)" }}
+                >
+                  open original <span aria-hidden>↗</span>
+                </button>
+              )}
+
+              <button
+                ref={closeRef}
+                onClick={() => {
+                  onClose();
+                  triggerRef.current?.focus();
+                }}
+                className="flex size-8 items-center justify-center border text-sm"
+                style={{ border: "1px solid #d6d6d2", color: "#232322" }}
+                aria-label="Close viewer"
+              >
+                ✕
+              </button>
             </div>
-          </div>
-        </motion.div>
-      </div>
+
+            {/* content area 16:10 */}
+            <div className="relative w-full" style={{ paddingBottom: "62.5%" }}>
+              <div className="absolute inset-0">
+                {current && (
+                  <EmbedPane
+                    key={`${item.flight}-${tabIdx}`}
+                    entry={current}
+                    onOriginal={openOriginal}
+                  />
+                )}
+              </div>
+            </div>
+          </motion.div>
+        </div>
+      )}
     </AnimatePresence>,
     document.body
   );

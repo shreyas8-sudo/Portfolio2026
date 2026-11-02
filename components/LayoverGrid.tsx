@@ -283,18 +283,14 @@ export default function LayoverGrid({ items }: { items: Layover[] }) {
         })}
       </ul>
 
-      {/* viewer overlay */}
-      <AnimatePresence>
-        {viewer && (
-          <Viewer
-            key={viewer.item.flight}
-            item={viewer.item}
-            originRect={viewer.rect}
-            onClose={() => setViewer(null)}
-            triggerRef={triggerRef as React.RefObject<HTMLElement | null>}
-          />
-        )}
-      </AnimatePresence>
+      {/* viewer overlay -- always mounted, animated by open prop */}
+      <Viewer
+        open={!!viewer}
+        item={viewer?.item ?? null}
+        originRect={viewer?.rect ?? null}
+        onClose={() => setViewer(null)}
+        triggerRef={triggerRef as React.RefObject<HTMLElement | null>}
+      />
     </>
   );
 }
