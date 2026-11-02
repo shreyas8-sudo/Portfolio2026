@@ -278,8 +278,12 @@ export default function Hero() {
     const anim    = animRef.current;
     const flipDiv = planeFlipRef.current;
     if (!flipDiv) return;
+    // Step one stage at a time toward targetStage so every intermediate stop is visited
+    const nextStep = anim.parkedStage + Math.sign(targetStage - anim.parkedStage);
+    if (nextStep === anim.parkedStage) return;
+    if (nextStep !== targetStage) anim.queuedStage = targetStage;
     fadeLabel.current();
-    const tgt = stagesRef.current[targetStage];
+    const tgt = stagesRef.current[nextStep];
     const cx  = (anim.x + tgt.x) / 2;
     const cy  = (anim.y + tgt.y) / 2 - 120;
     const dx  = qBezTan(0, anim.x, cx, tgt.x);
@@ -287,12 +291,12 @@ export default function Hero() {
     if (departFlip !== anim.flip) {
       anim.phase         = "flip_wait";
       anim.flipStartTime = performance.now();
-      anim.nextStage     = targetStage;
+      anim.nextStage     = nextStep;
       anim.flip          = departFlip;
       flipDiv.style.transition = "transform 600ms cubic-bezier(0.65,0,0.35,1)";
       flipDiv.style.transform  = `scaleX(${departFlip})`;
     } else {
-      startFlight.current(targetStage, performance.now());
+      startFlight.current(nextStep, performance.now());
     }
   });
 
@@ -594,14 +598,13 @@ export default function Hero() {
               <div key={pin.num} className="absolute"
                 style={{ left:pin.cx, top:pin.cy, zIndex:20, transform:"translate(-50%,-50%)" }}>
                 <motion.span className="absolute rounded-full"
-                  animate={pulsingPin===pin.num ? {scale:[1,1.6],opacity:[0.35,0]} : {scale:1,opacity:0.35}}
+                  animate={pulsingPin===pin.num ? {scale:[1,1.6],opacity:[0.35,0]} : {scale:1,opacity:0}}
                   transition={pulsingPin===pin.num ? {duration:0.48,ease:easeFade} : {duration:0}}
                   style={{ width:20, height:20, border:`1px solid ${pin.color}`,
                            position:"absolute", left:"50%", top:"50%", transform:"translate(-50%,-50%)" }}
                 />
                 <span className="relative grid place-items-center rounded-full" style={{
                   width:18, height:18, backgroundColor:pin.color,
-                  boxShadow:"0 0 0 5px #e9e9e6",
                   fontFamily:"var(--font-mono)", fontSize:9, fontWeight:500,
                   letterSpacing:"0.1em", color:"#ffffff", zIndex:1,
                 }}>{pin.num}</span>
@@ -748,13 +751,12 @@ export default function Hero() {
               aria-label={STAGE_LABELS[idx+1]?.text}
             >
               <motion.span className="absolute rounded-full"
-                animate={pulsingPin===pin.num ? {scale:[1,1.6],opacity:[0.35,0]} : {scale:1,opacity:0.35}}
+                animate={pulsingPin===pin.num ? {scale:[1,1.6],opacity:[0.35,0]} : {scale:1,opacity:0}}
                 transition={pulsingPin===pin.num ? {duration:0.48,ease:easeFade} : {duration:0}}
                 style={{ width:30, height:30, border:`1px solid ${pin.color}` }}
               />
               <span className="relative grid place-items-center rounded-full" style={{
                 width:22, height:22, backgroundColor:pin.color,
-                boxShadow:"0 0 0 6px #e9e9e6",
                 fontFamily:"var(--font-mono)", fontSize:11, fontWeight:500,
                 letterSpacing:"0.1em", color:"#ffffff", zIndex:1,
               }}>{pin.num}</span>
