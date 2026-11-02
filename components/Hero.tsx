@@ -261,10 +261,12 @@ export default function Hero() {
       inner.style.transition = "transform 400ms cubic-bezier(0.65,0,0.35,1)";
       inner.style.transform  = "translate(-50%,-50%) rotate(0deg)";
     }
-    typeLabel.current(STAGE_LABELS[stage].text, stage);
-    const pinNum = STAGE_LABELS[stage].pinIdx + 1;
-    setPulsingPin(pinNum);
-    setTimeout(() => setPulsingPin(null), 480);
+    if (stage > 0) {
+      typeLabel.current(STAGE_LABELS[stage].text, stage);
+      const pinNum = STAGE_LABELS[stage].pinIdx + 1;
+      setPulsingPin(pinNum);
+      setTimeout(() => setPulsingPin(null), 480);
+    }
     if (anim.queuedStage !== -1 && anim.queuedStage !== stage) {
       const q = anim.queuedStage;
       anim.queuedStage = -1;
@@ -479,7 +481,6 @@ export default function Hero() {
       if (outer) { outer.style.left=`${sp.x}px`; outer.style.top=`${sp.y}px`; outer.style.opacity="1"; }
       if (flipDiv) { flipDiv.style.transition="none"; flipDiv.style.transform=`scaleX(${sp.flip})`; }
       animRef.current.flip = sp.flip;
-      typeLabel.current(STAGE_LABELS[0].text, 0);
       setLoadDone(true);
       return;
     }
@@ -530,6 +531,15 @@ export default function Hero() {
       if (target !== anim.destStage) anim.queuedStage = target;
     }
   });
+
+  /* Re-check scroll position the moment load completes (user may have scrolled before loadDone) */
+  useEffect(() => {
+    if (!loadDone) return;
+    const p = scrollYProgress.get();
+    const target = progressToStage(p);
+    if (target > 0) animRef.current.queuedStage = target;
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [loadDone]);
 
   /* ── label render data ── */
   const lbl    = labelStage >= 0 ? STAGE_LABELS[labelStage] : null;
