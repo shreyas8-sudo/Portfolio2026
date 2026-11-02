@@ -207,14 +207,22 @@ function DisneyTile() {
           {/* eslint-disable-next-line @next/next/no-img-element */}
           <img
             src="/media/disney/logo.svg"
-            alt="Disney Experiences"
+            alt="Disney"
             style={{ width: 240, height: "auto", display: "block" }}
             draggable={false}
           />
           <span style={{
             display: "block",
+            fontFamily: "var(--font-mono)", fontSize: 13, fontWeight: 500,
+            letterSpacing: "0.18em", color: "rgba(255,255,255,0.9)",
+            marginTop: 6, textTransform: "uppercase",
+          }}>
+            Experiences
+          </span>
+          <span style={{
+            display: "block",
             fontFamily: "var(--font-mono)", fontSize: 11, fontWeight: 500,
-            letterSpacing: "0.1em", color: "rgba(252,252,251,0.8)",
+            letterSpacing: "0.1em", color: "rgba(252,252,251,0.6)",
             marginTop: 14, textTransform: "uppercase",
           }}>
             Case Study Coming Soon
