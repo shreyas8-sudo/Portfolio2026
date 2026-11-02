@@ -720,12 +720,15 @@ function HeroDesktop() {
           </div>
         )}
 
-        {/* name block -- re-enable pointer events for links */}
-        <div className="pointer-events-auto absolute w-full text-center"
+        {/* name block -- outer is pointer-events-none so it doesn't block pins */}
+        <div className="pointer-events-none absolute w-full text-center"
           style={{ top: 230, zIndex: 20 }}
-          onClick={(e) => e.stopPropagation()}
         >
-          <IntroText reduced={reduced} mobile={false} />
+          <div className="pointer-events-auto inline-block"
+            onClick={(e) => e.stopPropagation()}
+          >
+            <IntroText reduced={reduced} mobile={false} />
+          </div>
         </div>
       </div>
 
@@ -918,11 +921,13 @@ function HeroMobile() {
       })()}
 
       {/* name block */}
-      <div className="absolute pointer-events-auto"
+      <div className="absolute pointer-events-none"
         style={{ top: nameTop, left: 0, right: 0, zIndex: 20, display: "flex", justifyContent: "center" }}
-        onClick={(e) => e.stopPropagation()}
       >
-        <div style={{ width: "100%", maxWidth: Math.min(327 * sc, mw - 32), textAlign: "center", padding: "0 16px" }}>
+        <div className="pointer-events-auto"
+          style={{ width: "100%", maxWidth: Math.min(327 * sc, mw - 32), textAlign: "center", padding: "0 16px" }}
+          onClick={(e) => e.stopPropagation()}
+        >
           <IntroText reduced={reduced} mobile={true} />
         </div>
       </div>
