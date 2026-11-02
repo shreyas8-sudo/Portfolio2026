@@ -158,7 +158,9 @@ export const layovers: Layover[] = [
     descriptor: "case competition pitch for Bumble",
     blurb: "A case competition for Bumble, from research to a pitch deck, built as a team.",
     meta: "Strategy · Figma",
-    thumb: "/media/layovers/bumble.webp",
+    thumb: "/media/layovers/bumble-poster.jpg",
+    poster: "/media/layovers/bumble-poster.jpg",
+    video: "/media/layovers/bumble.mp4",
     embed: [
       { label: "Deck", url: "https://embed.figma.com/proto/MMmLcrFqbBwAijYHbMOoxL/Bumble-Case-Comp--Group-2?node-id=24-896&scaling=contain&content-scaling=fixed&page-id=24%3A364&starting-point-node-id=24%3A896&embed-host=share", kind: "figma" },
     ],
