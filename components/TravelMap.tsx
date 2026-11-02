@@ -27,12 +27,14 @@ export default function TravelMap() {
   const [dragging, setDragging] = useState(false);
   const [narrow, setNarrow] = useState(false);
   const svgRef = useRef<SVGSVGElement>(null);
-  const drag = useRef<{ x: number; y: number; ox: number; oy: number } | null>(
+  const drag = useRef<{ x: number; y: number; ox: number; oy: number; started: boolean } | null>(
     null
   );
   const pointers = useRef(new Map<number, { x: number; y: number }>());
   const pinch = useRef<{ dist: number; ux: number; uy: number } | null>(null);
   const shotDirRef = useRef(0);
+  const rafId = useRef<number | null>(null);
+  const pendingView = useRef<{ dx: number; dy: number; ox: number; oy: number } | null>(null);
   const still = useReducedMotion();
 
   /* mobile detection for label visibility */
@@ -136,7 +138,7 @@ export default function TravelMap() {
   const onPointerDown = (e: React.PointerEvent) => {
     pointers.current.set(e.pointerId, { x: e.clientX, y: e.clientY });
     if (pointers.current.size === 1) {
-      drag.current = { x: e.clientX, y: e.clientY, ox: view.x, oy: view.y };
+      drag.current = { x: e.clientX, y: e.clientY, ox: view.x, oy: view.y, started: false };
       pinch.current = null;
     } else if (pointers.current.size === 2) {
       drag.current = null;
@@ -172,9 +174,23 @@ export default function TravelMap() {
       const d = drag.current;
       const { scale } = metrics();
       if (!d) return;
+      if (!d.started) {
+        if (Math.hypot(e.clientX - d.x, e.clientY - d.y) < 4) return;
+        d.started = true;
+      }
       const dx = (e.clientX - d.x) / scale;
       const dy = (e.clientY - d.y) / scale;
-      setView((v) => clamp({ k: v.k, x: d.ox + dx, y: d.oy + dy }));
+      pendingView.current = { dx, dy, ox: d.ox, oy: d.oy };
+      if (rafId.current === null) {
+        rafId.current = requestAnimationFrame(() => {
+          rafId.current = null;
+          const pv = pendingView.current as { dx: number; dy: number; ox: number; oy: number } | null;
+          if (pv) {
+            pendingView.current = null;
+            setView((v) => clamp({ k: v.k, x: pv.ox + pv.dx, y: pv.oy + pv.dy }));
+          }
+        });
+      }
     };
 
     const up = (e: PointerEvent) => {
@@ -183,13 +199,20 @@ export default function TravelMap() {
       if (pointers.current.size === 1) {
         const [only] = [...pointers.current.values()];
         setView((v) => {
-          drag.current = { x: only.x, y: only.y, ox: v.x, oy: v.y };
+          drag.current = { x: only.x, y: only.y, ox: v.x, oy: v.y, started: true };
           return v;
         });
         return;
       }
       if (pointers.current.size === 0) {
         drag.current = null;
+        if (rafId.current !== null) {
+          cancelAnimationFrame(rafId.current);
+          rafId.current = null;
+          const pv = pendingView.current;
+          pendingView.current = null;
+          if (pv) setView((v) => clamp({ k: v.k, x: pv.ox + pv.dx, y: pv.oy + pv.dy }));
+        }
         setDragging(false);
       }
     };
@@ -331,6 +354,7 @@ export default function TravelMap() {
                   <g
                     key={p.name}
                     transform={`translate(${x} ${y}) scale(${s})`}
+                    onPointerDown={(e) => e.stopPropagation()}
                     onClick={(e) => {
                       e.stopPropagation();
                       focus(p);
