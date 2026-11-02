@@ -127,10 +127,25 @@ export default function LayoverGrid({ items }: { items: Layover[] }) {
         style={{ gridAutoFlow: "dense" }}
       >
         {items.map((item) => {
-          const isOn = expanded === item.flight;
-          const isHov = !isTouch && hovered === item.flight;
-          const playing = (isHov || isOn) && !!item.video;
+          // Desktop: expand on hover. Touch: expand on tap.
+          const isOn = (!isTouch && hovered === item.flight) || (isTouch && expanded === item.flight);
+          const playing = isOn && !!item.video;
           const isExternal = !!item.external;
+
+          const handleCardClick = (el: HTMLElement) => {
+            if (isTouch) {
+              toggle(item.flight, el);
+              return;
+            }
+            // Desktop: click opens content directly
+            if (item.embed) {
+              openViewer(item, el);
+            } else if (item.external) {
+              window.open(item.external, "_blank", "noreferrer");
+            } else {
+              // blurb-only card — nothing to open, just show on hover
+            }
+          };
 
           return (
             <motion.li
@@ -142,25 +157,26 @@ export default function LayoverGrid({ items }: { items: Layover[] }) {
                 else liRefs.current.delete(item.flight);
               }}
               className={isOn ? "sm:col-span-2 sm:row-span-2" : ""}
-              onMouseEnter={() => setHovered(item.flight)}
-              onMouseLeave={() => setHovered(null)}
+              onMouseEnter={() => !isTouch && setHovered(item.flight)}
+              onMouseLeave={() => !isTouch && setHovered(null)}
             >
               <div
                 role="button"
                 tabIndex={0}
                 aria-expanded={isOn}
-                onClick={(e) => toggle(item.flight, e.currentTarget)}
+                onClick={(e) => handleCardClick(e.currentTarget)}
                 onKeyDown={(e) => {
                   if (e.key === "Enter" || e.key === " ") {
                     e.preventDefault();
-                    toggle(item.flight, e.currentTarget);
+                    handleCardClick(e.currentTarget);
                   }
                 }}
                 className="flex h-full cursor-pointer flex-col overflow-hidden bg-grey-00"
                 style={{
-                  border: `1px solid ${isHov || isOn ? "#a8a8a3" : "#d6d6d2"}`,
-                  boxShadow: isHov || isOn ? "0 2px 8px rgba(19,28,51,0.05)" : "none",
-                  transform: isHov ? "translateY(-3px)" : "translateY(0)",
+                  border: `1px solid ${isOn ? "#a8a8a3" : "#d6d6d2"}`,
+                  boxShadow: isOn ? "0 2px 8px rgba(19,28,51,0.05)" : "none",
+                  transform: isOn && !isTouch ? "translateY(-3px)" : "translateY(0)",
+                  cursor: !isTouch && (item.embed || item.external) ? "pointer" : "default",
                   transition: `border-color var(--dur-base) var(--ease-move), box-shadow var(--dur-base) var(--ease-move), transform var(--dur-base) var(--ease-move)`,
                 }}
               >
@@ -198,7 +214,13 @@ export default function LayoverGrid({ items }: { items: Layover[] }) {
                       onClick={(e) => {
                         e.stopPropagation();
                         const card = e.currentTarget.closest('[role="button"]') as HTMLElement | null;
-                        toggle(item.flight, card ?? e.currentTarget);
+                        if (isTouch) {
+                          toggle(item.flight, card ?? e.currentTarget);
+                        } else if (item.embed) {
+                          openViewer(item, card ?? e.currentTarget);
+                        } else if (item.external) {
+                          window.open(item.external, "_blank", "noreferrer");
+                        }
                       }}
                       aria-label={isOn ? "Collapse" : "Expand"}
                       className="grid place-items-center"
@@ -263,43 +285,47 @@ export default function LayoverGrid({ items }: { items: Layover[] }) {
                           </p>
                         )}
 
-                        <div className="mt-4 flex gap-2" onClick={(e) => e.stopPropagation()}>
-                          {item.embed && (
-                            <button
-                              onClick={(e) => openViewer(item, e.currentTarget)}
-                              aria-label="Open in viewer"
-                              className="grid place-items-center"
-                              style={{
-                                width: "28px",
-                                height: "28px",
-                                border: "1px solid #d6d6d2",
-                                color: "#3d6bc4",
-                                fontSize: "16px",
-                                background: "transparent",
-                              }}
-                            >
-                              +
-                            </button>
-                          )}
-                          {item.external && (
-                            <a
-                              href={item.external}
-                              target="_blank"
-                              rel="noreferrer"
-                              aria-label="Visit"
-                              className="grid place-items-center"
-                              style={{
-                                width: "28px",
-                                height: "28px",
-                                border: "1px solid #d6d6d2",
-                                color: "#3d6bc4",
-                                fontSize: "13px",
-                              }}
-                            >
-                              ↗
-                            </a>
-                          )}
-                        </div>
+                        {/* touch-only action icons — desktop opens via card click */}
+                        {isTouch && (
+                          <div className="mt-4 flex gap-2">
+                            {item.embed && (
+                              <button
+                                onClick={(e) => { e.stopPropagation(); openViewer(item, e.currentTarget); }}
+                                aria-label="Open in viewer"
+                                className="grid place-items-center"
+                                style={{
+                                  width: "28px",
+                                  height: "28px",
+                                  border: "1px solid #d6d6d2",
+                                  color: "#3d6bc4",
+                                  fontSize: "16px",
+                                  background: "transparent",
+                                }}
+                              >
+                                +
+                              </button>
+                            )}
+                            {item.external && (
+                              <a
+                                href={item.external}
+                                target="_blank"
+                                rel="noreferrer"
+                                onClick={(e) => e.stopPropagation()}
+                                aria-label="Visit"
+                                className="grid place-items-center"
+                                style={{
+                                  width: "28px",
+                                  height: "28px",
+                                  border: "1px solid #d6d6d2",
+                                  color: "#3d6bc4",
+                                  fontSize: "13px",
+                                }}
+                              >
+                                ↗
+                              </a>
+                            )}
+                          </div>
+                        )}
                       </motion.div>
                     )}
                   </AnimatePresence>
