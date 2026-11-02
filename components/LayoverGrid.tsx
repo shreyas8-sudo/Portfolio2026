@@ -18,6 +18,52 @@ function useIsTouch() {
   return touch;
 }
 
+/* ── grid column count from breakpoint ── */
+function useColCount() {
+  const [cols, setCols] = useState(3);
+  useEffect(() => {
+    const update = () => {
+      if (window.innerWidth >= 1024) setCols(3);
+      else if (window.innerWidth >= 640) setCols(2);
+      else setCols(1);
+    };
+    update();
+    window.addEventListener("resize", update);
+    return () => window.removeEventListener("resize", update);
+  }, []);
+  return cols;
+}
+
+/* ── compute explicit gridColumn / gridRow for expansion ──
+   Anchors the card to its actual grid position so it never
+   reflows (which would send the cursor outside the card and
+   trigger an infinite collapse/expand loop on last-column cards). */
+function computeExpandSpec(
+  li: HTMLLIElement,
+  colCount: number,
+): { gridColumn: string; gridRow: string } | null {
+  if (colCount <= 1) return null;
+  const grid = li.parentElement as HTMLElement;
+  if (!grid) return null;
+
+  const gapPx = parseFloat(getComputedStyle(grid).columnGap) || 0;
+  const colWidth = (grid.offsetWidth - gapPx * (colCount - 1)) / colCount;
+
+  // Column (1-based): which column does this card's left edge fall in?
+  const col = Math.min(colCount, Math.max(1, Math.round(li.offsetLeft / (colWidth + gapPx)) + 1));
+  // Last column: grow left so the card never exits its current cell.
+  const gridColumn = col === colCount ? `${col - 1} / span 2` : `${col} / span 2`;
+
+  // Row (1-based): find unique offsetTop values across all siblings to
+  // determine which row band this card is in (dense flow may reorder cards).
+  const siblings = Array.from(grid.children) as HTMLElement[];
+  const uniqueTops = [...new Set(siblings.map((s) => s.offsetTop))].sort((a, b) => a - b);
+  const rowIdx = uniqueTops.indexOf(li.offsetTop);
+  const row = rowIdx >= 0 ? rowIdx + 1 : 1;
+
+  return { gridColumn, gridRow: `${row} / span 2` };
+}
+
 /* ── Ken Burns pan/scale variants (8 offsets so cards drift out of sync) ── */
 const KB: { scale: [number, number]; x: [string, string]; y: [string, string] }[] = [
   { scale: [1, 1.06], x: ["0%", "-1.5%"],  y: ["0%", "-1%"]   },
@@ -91,11 +137,15 @@ const EASING: [number, number, number, number] = [0.22, 1, 0.36, 1];
 
 type ViewerState = { item: Layover; rect: DOMRect };
 
+type HoverSpec = { flight: string; gridColumn: string; gridRow: string };
+
 export default function LayoverGrid({ items }: { items: Layover[] }) {
   const [expanded, setExpanded] = useState<string | null>(null);
   const [hovered, setHovered] = useState<string | null>(null);
+  const [hoverSpec, setHoverSpec] = useState<HoverSpec | null>(null);
   const [viewer, setViewer] = useState<ViewerState | null>(null);
   const isTouch = useIsTouch();
+  const colCount = useColCount();
   const reduced = useReducedMotion() ?? false;
 
   const liRefs = useRef<Map<string, HTMLLIElement>>(new Map());
@@ -128,11 +178,18 @@ export default function LayoverGrid({ items }: { items: Layover[] }) {
   }); // intentionally runs every render so newly mounted videos are observed
 
   const toggle = (flight: string, el: HTMLElement) => {
-    setExpanded((prev) => {
-      if (prev === flight) return null;
-      triggerRef.current = el;
-      return flight;
-    });
+    if (expanded === flight) {
+      setExpanded(null);
+      setHoverSpec(null);
+      return;
+    }
+    const li = liRefs.current.get(flight);
+    if (li) {
+      const spec = computeExpandSpec(li, colCount);
+      if (spec) setHoverSpec({ flight, ...spec });
+    }
+    triggerRef.current = el;
+    setExpanded(flight);
   };
 
   const openViewer = (item: Layover, triggerEl: HTMLElement) => {
@@ -180,15 +237,28 @@ export default function LayoverGrid({ items }: { items: Layover[] }) {
                 if (el) liRefs.current.set(item.flight, el);
                 else liRefs.current.delete(item.flight);
               }}
-              className={isOn ? "sm:col-span-2 sm:row-span-2" : ""}
+              style={
+                isOn && hoverSpec?.flight === item.flight
+                  ? { gridColumn: hoverSpec.gridColumn, gridRow: hoverSpec.gridRow }
+                  : undefined
+              }
               onMouseEnter={() => {
                 if (isTouch) return;
                 if (leaveTimer.current) { clearTimeout(leaveTimer.current); leaveTimer.current = null; }
+                const li = liRefs.current.get(item.flight);
+                if (li) {
+                  const spec = computeExpandSpec(li, colCount);
+                  if (spec) setHoverSpec({ flight: item.flight, ...spec });
+                }
                 setHovered(item.flight);
               }}
               onMouseLeave={() => {
                 if (isTouch) return;
-                leaveTimer.current = setTimeout(() => { setHovered(null); leaveTimer.current = null; }, 120);
+                leaveTimer.current = setTimeout(() => {
+                  setHovered(null);
+                  setHoverSpec(null);
+                  leaveTimer.current = null;
+                }, 120);
               }}
             >
               <div
