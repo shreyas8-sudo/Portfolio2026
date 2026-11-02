@@ -6,6 +6,7 @@ import type { EmbedEntry, Layover } from "@/lib/site";
 import { createPortal } from "react-dom";
 
 function figmaEmbedUrl(url: string) {
+  if (url.startsWith("https://embed.figma.com/")) return url;
   return `https://www.figma.com/embed?embed_host=shreyashanmugam&url=${encodeURIComponent(url)}`;
 }
 

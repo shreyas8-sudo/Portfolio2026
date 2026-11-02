@@ -136,11 +136,11 @@ export const layovers: Layover[] = [
     date: "Fall 2026",
     descriptor: "learn choreography from video",
     blurb: "A product that helps dancers learn from video, built with Claude Code in a day.",
-    thumb: "/media/layovers/mark.png",
+    thumb: "/media/layovers/mark.webp",
     embed: [
       {
         label: "Deck",
-        url: "https://www.figma.com/proto/AA2BeFWeFqZtioUBbC9Shs/Palantir-Design-Challenge--amin?node-id=108-156&scaling=scale-down&content-scaling=fixed&page-id=101%3A2",
+        url: "https://embed.figma.com/proto/AA2BeFWeFqZtioUBbC9Shs/Palantir-Design-Challenge--amin?node-id=108-156&scaling=scale-down&content-scaling=fixed&page-id=101%3A2&embed-host=share",
         kind: "figma",
       },
       {
