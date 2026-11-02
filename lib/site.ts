@@ -225,8 +225,10 @@ export const layovers: Layover[] = [
     descriptor: "24-hour design challenge",
     blurb: "Widgets that make a music streaming app customisable and easier to search. Rapid ideation to prototype in one day.",
     thumb: "/media/layovers/spotify.webp",
+    video: "/media/layovers/spotify.mp4",
     embed: [
-      { url: "https://embed.figma.com/deck/EpOi5smT18EfI0x6vkYyU7/ShreyaS_LavaLabs-Design-Challenge?node-id=1-113&scaling=min-zoom&content-scaling=fixed&page-id=0%3A1&embed-host=share", kind: "figma" },
+      { label: "Video", url: "/media/layovers/spotify.mp4", kind: "video" },
+      { label: "Deck", url: "https://embed.figma.com/deck/EpOi5smT18EfI0x6vkYyU7/ShreyaS_LavaLabs-Design-Challenge?node-id=1-113&scaling=min-zoom&content-scaling=fixed&page-id=0%3A1&embed-host=share", kind: "figma" },
     ],
   },
   /* 9 */ {
