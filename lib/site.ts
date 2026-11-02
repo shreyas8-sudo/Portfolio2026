@@ -129,7 +129,7 @@ export type Layover = {
 };
 
 export const layovers: Layover[] = [
-  {
+  /* 1 */ {
     flight: "MK001",
     name: "mark",
     origin: "Personal",
@@ -137,106 +137,108 @@ export const layovers: Layover[] = [
     descriptor: "learn choreography from video",
     blurb: "A product that helps dancers learn from video, built with Claude Code in a day.",
     thumb: "/media/layovers/mark.webp",
+    video: "/media/layovers/mark-demo.mp4",
     embed: [
-      {
-        label: "Deck",
-        url: "https://embed.figma.com/proto/AA2BeFWeFqZtioUBbC9Shs/Palantir-Design-Challenge--amin?node-id=108-156&scaling=scale-down&content-scaling=fixed&page-id=101%3A2&embed-host=share",
-        kind: "figma",
-      },
-      {
-        label: "Live app",
-        url: "https://mark-neon-pi.vercel.app/",
-        kind: "site",
-      },
+      { label: "Demo", url: "/media/layovers/mark-demo.mp4", kind: "video" },
+      { label: "Deck", url: "https://embed.figma.com/proto/AA2BeFWeFqZtioUBbC9Shs/Palantir-Design-Challenge--amin?node-id=108-156&scaling=scale-down&content-scaling=fixed&page-id=101%3A2&embed-host=share", kind: "figma" },
+      { label: "Live app", url: "https://mark-neon-pi.vercel.app/", kind: "site" },
     ],
   },
-  {
+  /* 2 */ {
+    flight: "BC026",
+    name: "bumble case competition",
+    origin: "Academic",
+    date: "Fall 2026",
+    descriptor: "case competition pitch for Bumble",
+    blurb: "A case competition for Bumble, from research to a pitch deck, built as a team.",
+    thumb: "/media/layovers/bumble.webp",
+    embed: [
+      { label: "Deck", url: "https://embed.figma.com/proto/MMmLcrFqbBwAijYHbMOoxL/Bumble-Case-Comp--Group-2?node-id=24-896&scaling=contain&content-scaling=fixed&page-id=24%3A364&starting-point-node-id=24%3A896&embed-host=share", kind: "figma" },
+    ],
+  },
+  /* 3 */ {
     flight: "PN101",
     name: "peinao",
     origin: "Personal",
     date: "Summer 2026",
     descriptor: "allergen menu analyser",
-    blurb:
-      "A menu analyser for allergens. A side project with a friend, built and shipped in a week.",
+    blurb: "A menu analyser for allergens. A side project with a friend, built and shipped in a week.",
     thumb: "/media/layovers/peinao.webp",
-    embed: [{ url: "https://peinao.vercel.app/", kind: "site" }],
+    video: "/media/layovers/peinao.mp4",
+    embed: [
+      { label: "Demo", url: "/media/layovers/peinao.mp4", kind: "video" },
+      { label: "Live site", url: "https://peinao.vercel.app/", kind: "site" },
+    ],
   },
-  {
+  /* 4 */ {
     flight: "AR440",
     name: "virtual coffee shop",
     origin: "Academic",
     date: "Spring 2026",
     descriptor: "coffee and UX, in AR/VR",
-    blurb:
-      "An AR/VR build bringing two favourite things together: coffee and UX.",
+    blurb: "An AR/VR build bringing my two favourite things together, coffee and UX, animated in After Effects.",
     thumb: "/media/layovers/arvr.webp",
     video: "/media/layovers/arvr.mp4",
     embed: [{ url: "/media/layovers/arvr.mp4", kind: "video" }],
   },
-  {
+  /* 5 */ {
     flight: "IR077",
     name: "irvins",
     origin: "Client",
     date: "Spring 2026",
     descriptor: "research-led strategy deck",
-    blurb:
-      "A slide deck built from initial research, as a strategy consultant for them.",
+    blurb: "A slide deck built from initial research, as a strategy consultant for them.",
     thumb: "/media/layovers/irvins.webp",
+    video: "/media/layovers/irvins.mp4",
     embed: [
-      {
-        url: "https://www.figma.com/proto/SCYh86VkthPFwhs3GGaAoj/Irvins?node-id=1-2",
-        kind: "figma",
-      },
+      { label: "Video", url: "/media/layovers/irvins.mp4", kind: "video" },
+      { label: "Deck", url: "https://embed.figma.com/proto/SCYh86VkthPFwhs3GGaAoj/Irvins?node-id=1-2&scaling=contain&content-scaling=fixed&page-id=0%3A1&embed-host=share", kind: "figma" },
     ],
   },
-  {
+  /* 6 */ {
+    flight: "FN205",
+    name: "adaptable furniture",
+    origin: "Academic",
+    date: "Spring 2026",
+    descriptor: "marketing site for a furniture team",
+    blurb: "Designed and shipped a marketing website for a furniture team's adaptable piece.",
+    thumb: "/media/layovers/adaptable-furniture.webp",
+    external: "https://github.com/xl0u1sx/Adaptable-Furniture-Website",
+  },
+  /* 7 */ {
     flight: "DA118",
     name: "designathon",
     origin: "Academic",
     date: "Spring 2026",
     descriptor: "runner-up, Framer track at CreateSC",
-    blurb:
-      "CreateSC: made an analogue experience digital. Placed runner-up in the Framer track.",
+    blurb: "CreateSC: made an analogue experience digital. Placed runner-up in the Framer track.",
     thumb: "/media/layovers/designathon.webp",
     external: "https://devpost.com/software/letters-to-your-future-self",
   },
-  {
-    flight: "FN205",
-    name: "adaptable furniture",
-    origin: "Academic",
-    date: "Spring 2026",
-    descriptor: "marketing site, designed and shipped",
-    blurb: "Designed and shipped a marketing site for an innovative piece of furniture.",
-    thumb: "/media/layovers/adaptable-furniture.webp",
-    external: "https://github.com/xl0u1sx/Adaptable-Furniture-Website",
-  },
-  {
+  /* 8 */ {
     flight: "SP024",
     name: "spotify widgets",
     origin: "Academic",
     date: "Fall 2025",
     descriptor: "24-hour design challenge",
-    blurb:
-      "Widgets that make a music streaming app customisable and easier to search. Rapid ideation to prototype in one day.",
+    blurb: "Widgets that make a music streaming app customisable and easier to search. Rapid ideation to prototype in one day.",
     thumb: "/media/layovers/spotify.webp",
     embed: [
-      {
-        url: "https://www.figma.com/deck/EpOi5smT18EfI0x6vkYyU7/ShreyaS_LavaLabs-Design-Challenge?node-id=1-113&scaling=min-zoom&content-scaling=fixed&page-id=0%3A1",
-        kind: "figma",
-      },
+      { url: "https://embed.figma.com/deck/EpOi5smT18EfI0x6vkYyU7/ShreyaS_LavaLabs-Design-Challenge?node-id=1-113&scaling=min-zoom&content-scaling=fixed&page-id=0%3A1&embed-host=share", kind: "figma" },
     ],
   },
-  {
+  /* 9 */ {
     flight: "FF302",
     name: "fly fearless",
     origin: "Client",
     date: "Summer 2025",
     descriptor: "website rebuild, tested with users",
-    blurb:
-      "An internship spent rebuilding a website: branding, navigation, and accessibility, tested with real users.",
+    blurb: "An internship spent rebuilding a website: branding, navigation, and accessibility, tested with real users.",
     thumb: "/media/layovers/fly-fearless.webp",
+    video: "/media/layovers/fly-fearless.mp4",
+    embed: [{ url: "/media/layovers/fly-fearless.mp4", kind: "video" }],
   },
-  {
+  /* 10 */ {
     flight: "NB218",
     name: "neoboard",
     origin: "Client",
@@ -245,25 +247,23 @@ export const layovers: Layover[] = [
     blurb: "An internship working on a faculty dashboard for education technology.",
     thumb: "/media/layovers/neoboard.webp",
   },
-  {
+  /* 11 */ {
     flight: "DN004",
     name: "dance",
     origin: "Personal",
     date: "Always",
     descriptor: "performed at Netflix × BFunk",
-    blurb:
-      "Trained in multiple styles and competed on a team. Got to perform as part of a Netflix × BFunk PR event for Best of the Best. Now I find a class wherever I am: Hyderabad, LA, New York.",
+    blurb: "Trained in multiple styles and competed on a team. Got to perform as part of a Netflix × BFunk PR event for Best of the Best. Now I find a class wherever I am: Hyderabad, LA, New York.",
     thumb: "/media/layovers/dance.webp",
     embed: [{ url: "/media/layovers/dance.webp", kind: "image" }],
   },
-  {
+  /* 12 */ {
     flight: "FD012",
     name: "food",
     origin: "Personal",
     date: "Always",
     descriptor: "ranked on beli, ten weeks in",
-    blurb:
-      "Recently started properly appreciating food through my beli. Just finished my 10th week.",
+    blurb: "Recently started properly appreciating food through my beli. Just finished my 10th week.",
     thumb: "/media/layovers/beli.webp",
     external: "https://beliapp.co/app/snackitupwshrey",
   },

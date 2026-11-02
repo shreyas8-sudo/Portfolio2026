@@ -233,6 +233,7 @@ function DisneyTile() {
 
 /* Boarding pass stack — back to front */
 const PASSES = [
+  { name: "+ 8 more stops", code: "", descriptor: "", bg: "#f4f4f2", fg: "#a8a8a3", muted: true },
   { name: "designathon", code: "DA118", descriptor: "runner-up, Framer track at CreateSC", bg: "#e0b33c", fg: "#232322" },
   { name: "spotify widgets", code: "SP024", descriptor: "24-hour design challenge", bg: "#d97a2a", fg: "#fcfcfb" },
   { name: "peinao", code: "PN101", descriptor: "allergen menu analyser", bg: "#1e2d50", fg: "#fcfcfb" },
@@ -244,19 +245,21 @@ const COVER_H    = 250;
 const MARK_TOP   = COVER_H - PASS_H;     // 178 — mark always at bottom
 const PEEK       = 14;                    // px each card peeks above the one in front
 
-/* back → front (designathon, spotify, peinao, mark) */
+/* back → front (+8more, designathon, spotify, peinao, mark) */
 const REST_TOPS  = [
-  MARK_TOP - 3 * PEEK,   // designathon  136
-  MARK_TOP - 2 * PEEK,   // spotify      150
-  MARK_TOP - 1 * PEEK,   // peinao       164
-  MARK_TOP,              // mark         178 (stays)
+  MARK_TOP - 4 * PEEK,   // +8 more       122
+  MARK_TOP - 3 * PEEK,   // designathon   136
+  MARK_TOP - 2 * PEEK,   // spotify       150
+  MARK_TOP - 1 * PEEK,   // peinao        164
+  MARK_TOP,              // mark          178 (stays)
 ] as const;
 
 const HOVER_TOPS = [
-  MARK_TOP - 3 * PASS_H, // designathon  -38  (partially clips above cover)
-  MARK_TOP - 2 * PASS_H, // spotify       34
-  MARK_TOP - 1 * PASS_H, // peinao       106
-  MARK_TOP,              // mark         178  (stays put)
+  MARK_TOP - 4 * PASS_H, // +8 more       -110 (clips above cover)
+  MARK_TOP - 3 * PASS_H, // designathon    -38 (partially clips above cover)
+  MARK_TOP - 2 * PASS_H, // spotify         34
+  MARK_TOP - 1 * PASS_H, // peinao         106
+  MARK_TOP,              // mark           178  (stays put)
 ] as const;
 
 function LayoversTile() {
@@ -270,10 +273,11 @@ function LayoversTile() {
       {/* Cover — fixed height, overflow:hidden clips passes that spread above */}
       <div style={{ height: COVER_H, overflow: "hidden", position: "relative", background: "#f4f4f2" }}>
         {PASSES.map((pass, i) => {
-          const delay = (3 - i) * 0.04;
+          const delay = (PASSES.length - 1 - i) * 0.04;
+          const isMuted = "muted" in pass && pass.muted;
           return (
             <motion.div
-              key={pass.code}
+              key={pass.code || pass.name}
               initial={{ top: REST_TOPS[i] }}
               animate={{ top: over && !reduced ? HOVER_TOPS[i] : REST_TOPS[i] }}
               transition={{ duration: durBase, ease: easeMove, delay }}
@@ -283,38 +287,48 @@ function LayoversTile() {
                 display: "flex", alignItems: "center", justifyContent: "space-between",
                 padding: "0 16px",
                 zIndex: i + 1,
+                border: isMuted ? "1px dashed #d6d6d2" : undefined,
               }}
             >
-              {/* Left */}
-              <div>
+              {isMuted ? (
                 <div style={{
-                  fontFamily: "var(--font-sans)", fontSize: 22, fontWeight: 500,
-                  color: pass.fg, lineHeight: 1.1,
+                  fontFamily: "var(--font-mono)", fontSize: 13, fontWeight: 500,
+                  color: "#a8a8a3", letterSpacing: "0.04em",
                 }}>{pass.name}</div>
-                <div style={{
-                  fontFamily: "var(--font-sans)", fontSize: 14, fontWeight: 500,
-                  color: pass.fg, opacity: 0.72, marginTop: 2,
-                }}>{pass.descriptor}</div>
-              </div>
-              {/* Right */}
-              <div style={{ textAlign: "right" }}>
-                <div style={{
-                  fontFamily: "var(--font-mono)", fontSize: 11, fontWeight: 500,
-                  letterSpacing: "0.1em", color: pass.fg, opacity: 0.6,
-                  textTransform: "uppercase",
-                }}>Flight</div>
-                <div style={{
-                  fontFamily: "var(--font-dot)", fontSize: 22, fontWeight: 800,
-                  color: pass.fg, lineHeight: 1,
-                }}>{pass.code}</div>
-              </div>
+              ) : (
+                <>
+                  {/* Left */}
+                  <div>
+                    <div style={{
+                      fontFamily: "var(--font-sans)", fontSize: 22, fontWeight: 500,
+                      color: pass.fg, lineHeight: 1.1,
+                    }}>{pass.name}</div>
+                    <div style={{
+                      fontFamily: "var(--font-sans)", fontSize: 14, fontWeight: 500,
+                      color: pass.fg, opacity: 0.72, marginTop: 2,
+                    }}>{pass.descriptor}</div>
+                  </div>
+                  {/* Right */}
+                  <div style={{ textAlign: "right" }}>
+                    <div style={{
+                      fontFamily: "var(--font-mono)", fontSize: 11, fontWeight: 500,
+                      letterSpacing: "0.1em", color: pass.fg, opacity: 0.6,
+                      textTransform: "uppercase",
+                    }}>Flight</div>
+                    <div style={{
+                      fontFamily: "var(--font-dot)", fontSize: 22, fontWeight: 800,
+                      color: pass.fg, lineHeight: 1,
+                    }}>{pass.code}</div>
+                  </div>
+                </>
+              )}
             </motion.div>
           );
         })}
       </div>
 
       <TileBody>
-        <MetaRow company="Layovers" status="11 Stops" statusColor="#3d6bc4" />
+        <MetaRow company="Layovers" status="12 Stops" statusColor="#3d6bc4" />
         <TileTitle>
           Side projects, experiments and challenges, between destinations&ensp;
           <span style={{ color: "#3d6bc4" }}>↗</span>
