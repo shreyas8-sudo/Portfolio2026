@@ -96,6 +96,7 @@ export default function LayoverGrid({ items }: { items: Layover[] }) {
 
   const liRefs = useRef<Map<string, HTMLLIElement>>(new Map());
   const triggerRef = useRef<HTMLElement | null>(null);
+  const leaveTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
 
   useEffect(() => {
     const onKey = (e: KeyboardEvent) => {
@@ -157,8 +158,15 @@ export default function LayoverGrid({ items }: { items: Layover[] }) {
                 else liRefs.current.delete(item.flight);
               }}
               className={isOn ? "sm:col-span-2 sm:row-span-2" : ""}
-              onMouseEnter={() => !isTouch && setHovered(item.flight)}
-              onMouseLeave={() => !isTouch && setHovered(null)}
+              onMouseEnter={() => {
+                if (isTouch) return;
+                if (leaveTimer.current) { clearTimeout(leaveTimer.current); leaveTimer.current = null; }
+                setHovered(item.flight);
+              }}
+              onMouseLeave={() => {
+                if (isTouch) return;
+                leaveTimer.current = setTimeout(() => { setHovered(null); leaveTimer.current = null; }, 80);
+              }}
             >
               <div
                 role="button"
@@ -175,7 +183,7 @@ export default function LayoverGrid({ items }: { items: Layover[] }) {
                 style={{
                   border: `1px solid ${isOn ? "#a8a8a3" : "#d6d6d2"}`,
                   boxShadow: isOn ? "0 2px 8px rgba(19,28,51,0.05)" : "none",
-                  transform: isOn && !isTouch ? "translateY(-3px)" : "translateY(0)",
+                  transform: "translateY(0)",
                   cursor: !isTouch && (item.embed || item.external) ? "pointer" : "default",
                   transition: `border-color var(--dur-base) var(--ease-move), box-shadow var(--dur-base) var(--ease-move), transform var(--dur-base) var(--ease-move)`,
                 }}
