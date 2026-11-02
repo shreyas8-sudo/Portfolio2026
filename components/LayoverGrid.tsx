@@ -167,8 +167,8 @@ export default function LayoverGrid({ items }: { items: Layover[] }) {
                 <Thumb item={item} playing={playing} isTouch={isTouch} />
 
                 <div className="flex flex-1 flex-col px-4 py-3.5">
-                  {/* date + origin */}
-                  <div className="flex items-center justify-between gap-2">
+                  {/* date + origin + toggle icon */}
+                  <div className="flex items-center gap-2">
                     <span
                       style={{
                         fontFamily: "var(--font-mono)",
@@ -181,6 +181,7 @@ export default function LayoverGrid({ items }: { items: Layover[] }) {
                     >
                       {item.date}
                     </span>
+                    <span className="flex-1" />
                     <span
                       style={{
                         fontFamily: "var(--font-mono)",
@@ -193,6 +194,28 @@ export default function LayoverGrid({ items }: { items: Layover[] }) {
                     >
                       {item.origin}
                     </span>
+                    <button
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        const card = e.currentTarget.closest('[role="button"]') as HTMLElement | null;
+                        toggle(item.flight, card ?? e.currentTarget);
+                      }}
+                      aria-label={isOn ? "Collapse" : "Expand"}
+                      className="grid place-items-center"
+                      style={{
+                        width: "18px",
+                        height: "18px",
+                        border: "1px solid #d6d6d2",
+                        color: "#6e6e69",
+                        fontSize: "14px",
+                        lineHeight: 1,
+                        flexShrink: 0,
+                        background: "transparent",
+                        transition: `color var(--dur-base) var(--ease-move), border-color var(--dur-base) var(--ease-move)`,
+                      }}
+                    >
+                      {isOn ? "×" : "+"}
+                    </button>
                   </div>
 
                   {/* name */}
@@ -240,20 +263,22 @@ export default function LayoverGrid({ items }: { items: Layover[] }) {
                           </p>
                         )}
 
-                        <div className="mt-4 flex gap-3" onClick={(e) => e.stopPropagation()}>
+                        <div className="mt-4 flex gap-2" onClick={(e) => e.stopPropagation()}>
                           {item.embed && (
                             <button
                               onClick={(e) => openViewer(item, e.currentTarget)}
-                              className="px-4 py-2 text-sm"
+                              aria-label="Open in viewer"
+                              className="grid place-items-center"
                               style={{
+                                width: "28px",
+                                height: "28px",
                                 border: "1px solid #d6d6d2",
                                 color: "#3d6bc4",
-                                fontFamily: "var(--font-sans)",
-                                fontWeight: 500,
+                                fontSize: "16px",
                                 background: "transparent",
                               }}
                             >
-                              open
+                              +
                             </button>
                           )}
                           {item.external && (
@@ -261,15 +286,17 @@ export default function LayoverGrid({ items }: { items: Layover[] }) {
                               href={item.external}
                               target="_blank"
                               rel="noreferrer"
-                              className="inline-flex items-center gap-1 px-4 py-2 text-sm"
+                              aria-label="Visit"
+                              className="grid place-items-center"
                               style={{
+                                width: "28px",
+                                height: "28px",
                                 border: "1px solid #d6d6d2",
                                 color: "#3d6bc4",
-                                fontFamily: "var(--font-sans)",
-                                fontWeight: 500,
+                                fontSize: "13px",
                               }}
                             >
-                              visit <span aria-hidden>↗</span>
+                              ↗
                             </a>
                           )}
                         </div>

@@ -75,6 +75,7 @@ function EmbedPane({ entry, onOriginal }: { entry: EmbedEntry; onOriginal: () =>
       src={src}
       title="embed"
       allowFullScreen
+      allow="clipboard-write"
       onLoad={() => {
         if (timerRef.current) clearTimeout(timerRef.current);
       }}
