@@ -229,109 +229,97 @@ function DisneyTile() {
 
 /* ══════════════════════════════════════════════════════
    LAYOVERS TILE
+   Spec: 4 passes (designathon · spotify · peinao · mark), back→front
+   Normal: cover 250px, passes at y=24,38,52,66 (14px peek)
+   Hover:  cover grows to 372px, passes at y=16,88,160,232 (72px apart)
+           each shows 72px header only; dashed "+ 8 MORE STOPS" at y=316
 ═══════════════════════════════════════════════════════ */
 
-/* Boarding pass stack — back to front */
-const PASSES = [
-  { name: "+ 8 more stops", code: "", descriptor: "", bg: "#f4f4f2", fg: "#a8a8a3", muted: true },
-  { name: "designathon", code: "DA118", descriptor: "runner-up, Framer track at CreateSC", bg: "#e0b33c", fg: "#232322" },
-  { name: "spotify widgets", code: "SP024", descriptor: "24-hour design challenge", bg: "#d97a2a", fg: "#fcfcfb" },
-  { name: "peinao", code: "PN101", descriptor: "allergen menu analyser", bg: "#1e2d50", fg: "#fcfcfb" },
-  { name: "mark", code: "MK001", descriptor: "learn choreography from video", bg: "#3d6bc4", fg: "#fcfcfb" },
+const LAY_PASSES = [
+  { name: "designathon",    code: "DA118", descriptor: "runner-up, Framer track at CreateSC", bg: "#e0b33c", fg: "#232322" },
+  { name: "spotify widgets",code: "SP024", descriptor: "24-hour design challenge",            bg: "#d97a2a", fg: "#fcfcfb" },
+  { name: "peinao",         code: "PN101", descriptor: "allergen menu analyser",              bg: "#1e2d50", fg: "#fcfcfb" },
+  { name: "mark",           code: "MK001", descriptor: "learn choreography from video",       bg: "#3d6bc4", fg: "#fcfcfb" },
 ] as const;
 
-const PASS_H     = 72;
-const COVER_H    = 250;
-const MARK_TOP   = COVER_H - PASS_H;     // 178 — mark always at bottom
-const PEEK       = 14;                    // px each card peeks above the one in front
-
-/* back → front (+8more, designathon, spotify, peinao, mark) */
-const REST_TOPS  = [
-  MARK_TOP - 4 * PEEK,   // +8 more       122
-  MARK_TOP - 3 * PEEK,   // designathon   136
-  MARK_TOP - 2 * PEEK,   // spotify       150
-  MARK_TOP - 1 * PEEK,   // peinao        164
-  MARK_TOP,              // mark          178 (stays)
-] as const;
-
-const HOVER_TOPS = [
-  MARK_TOP - 4 * PASS_H, // +8 more       -110 (clips above cover)
-  MARK_TOP - 3 * PASS_H, // designathon    -38 (partially clips above cover)
-  MARK_TOP - 2 * PASS_H, // spotify         34
-  MARK_TOP - 1 * PASS_H, // peinao         106
-  MARK_TOP,              // mark           178  (stays put)
-] as const;
+const LAY_PASS_W  = 404;
+const LAY_PASS_H  = 72;
+const LAY_REST_Y  = [24, 38, 52, 66]  as const;   // normal stack (14px peek)
+const LAY_HOVER_Y = [16, 88, 160, 232] as const;  // expanded (72px apart)
+const LAY_COVER_NORMAL = 250;
+const LAY_COVER_HOVER  = 372;
+const LAY_EASE = [0.22, 1, 0.36, 1] as const;
+const LAY_DUR  = 0.28; // 280ms
 
 function LayoversTile() {
   const { over, setOver, reduced, shell } = useTileHover();
 
   return (
-    <Link href="/layovers" style={{ display: "block", ...shell() }}
+    <Link href="/layovers"
+      style={{ display:"block", ...shell() }}
       onMouseEnter={() => setOver(true)} onMouseLeave={() => setOver(false)}
       onFocus={() => setOver(true)} onBlur={() => setOver(false)}
     >
-      {/* Cover — fixed height, overflow:hidden clips passes that spread above */}
-      <div style={{ height: COVER_H, overflow: "hidden", position: "relative", background: "#f4f4f2" }}>
-        {PASSES.map((pass, i) => {
-          const delay = (PASSES.length - 1 - i) * 0.04;
-          const isMuted = "muted" in pass && pass.muted;
-          return (
-            <motion.div
-              key={pass.code || pass.name}
-              initial={{ top: REST_TOPS[i] }}
-              animate={{ top: over && !reduced ? HOVER_TOPS[i] : REST_TOPS[i] }}
-              transition={{ duration: durBase, ease: easeMove, delay }}
-              style={{
-                position: "absolute", left: 20, right: 20, height: PASS_H,
-                backgroundColor: pass.bg,
-                display: "flex", alignItems: "center", justifyContent: "space-between",
-                padding: "0 16px",
-                zIndex: i + 1,
-                border: isMuted ? "1px dashed #d6d6d2" : undefined,
-              }}
-            >
-              {isMuted ? (
-                <div style={{
-                  fontFamily: "var(--font-mono)", fontSize: 13, fontWeight: 500,
-                  color: "#a8a8a3", letterSpacing: "0.04em",
-                }}>{pass.name}</div>
-              ) : (
-                <>
-                  {/* Left */}
-                  <div>
-                    <div style={{
-                      fontFamily: "var(--font-sans)", fontSize: 22, fontWeight: 500,
-                      color: pass.fg, lineHeight: 1.1,
-                    }}>{pass.name}</div>
-                    <div style={{
-                      fontFamily: "var(--font-sans)", fontSize: 14, fontWeight: 500,
-                      color: pass.fg, opacity: 0.72, marginTop: 2,
-                    }}>{pass.descriptor}</div>
-                  </div>
-                  {/* Right */}
-                  <div style={{ textAlign: "right" }}>
-                    <div style={{
-                      fontFamily: "var(--font-mono)", fontSize: 11, fontWeight: 500,
-                      letterSpacing: "0.1em", color: pass.fg, opacity: 0.6,
-                      textTransform: "uppercase",
-                    }}>Flight</div>
-                    <div style={{
-                      fontFamily: "var(--font-dot)", fontSize: 22, fontWeight: 800,
-                      color: pass.fg, lineHeight: 1,
-                    }}>{pass.code}</div>
-                  </div>
-                </>
-              )}
-            </motion.div>
-          );
-        })}
-      </div>
+      {/* Cover — height animates on hover */}
+      <motion.div
+        animate={{ height: over && !reduced ? LAY_COVER_HOVER : LAY_COVER_NORMAL }}
+        transition={{ duration: LAY_DUR, ease: LAY_EASE }}
+        style={{ overflow:"hidden", position:"relative", background:"#f4f4f2" }}
+      >
+        {/* Passes */}
+        {LAY_PASSES.map((pass, i) => (
+          <motion.div
+            key={pass.code}
+            animate={{ top: over && !reduced ? LAY_HOVER_Y[i] : LAY_REST_Y[i] }}
+            transition={{ duration: LAY_DUR, ease: LAY_EASE, delay: i * 0.04 }}
+            style={{
+              position:"absolute",
+              left: 20, width: LAY_PASS_W, height: LAY_PASS_H,
+              backgroundColor: pass.bg,
+              display:"flex", alignItems:"center", justifyContent:"space-between",
+              padding:"0 16px",
+              zIndex: i + 1,
+              boxShadow: "0 2px 8px rgba(0,0,0,0.10)",
+            }}
+          >
+            <div>
+              <div style={{ fontFamily:"var(--font-sans)", fontSize:22, fontWeight:500,
+                             color:pass.fg, lineHeight:1.1 }}>{pass.name}</div>
+              <div style={{ fontFamily:"var(--font-sans)", fontSize:14, fontWeight:500,
+                             color:pass.fg, opacity:0.72, marginTop:2 }}>{pass.descriptor}</div>
+            </div>
+            <div style={{ textAlign:"right" }}>
+              <div style={{ fontFamily:"var(--font-mono)", fontSize:11, fontWeight:500,
+                             letterSpacing:"0.1em", color:pass.fg, opacity:0.6,
+                             textTransform:"uppercase" }}>Flight</div>
+              <div style={{ fontFamily:"var(--font-dot)", fontSize:22, fontWeight:800,
+                             color:pass.fg, lineHeight:1 }}>{pass.code}</div>
+            </div>
+          </motion.div>
+        ))}
+
+        {/* "+ 8 MORE STOPS" — only visible on hover */}
+        <motion.div
+          animate={{ top: over && !reduced ? 316 : LAY_COVER_HOVER }}
+          transition={{ duration: LAY_DUR, ease: LAY_EASE, delay: LAY_PASSES.length * 0.04 }}
+          style={{
+            position:"absolute", left:20, width:LAY_PASS_W, height:40,
+            border:"1px dashed #a8a8a3",
+            display:"flex", alignItems:"center", justifyContent:"center",
+            zIndex: LAY_PASSES.length + 1,
+          }}
+        >
+          <span style={{ fontFamily:"var(--font-mono)", fontSize:11, fontWeight:500,
+                          letterSpacing:"0.08em", color:"#a8a8a3",
+                          textTransform:"uppercase" }}>+ 8 more stops</span>
+        </motion.div>
+      </motion.div>
 
       <TileBody>
         <MetaRow company="Layovers" status="12 Stops" statusColor="#3d6bc4" />
         <TileTitle>
           Side projects, experiments and challenges, between destinations&ensp;
-          <span style={{ color: "#3d6bc4" }}>↗</span>
+          <span style={{ color:"#3d6bc4" }}>↗</span>
         </TileTitle>
       </TileBody>
     </Link>
