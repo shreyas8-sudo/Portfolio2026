@@ -602,11 +602,11 @@ export default function Hero() {
             {lbl && mobLblPin && (
               <div className="pointer-events-none absolute" style={{
                 ...(lbl.placement === "below" ? {
-                  left: Math.max(4, Math.min(mw - 4, mobLblPin.cx)),
+                  /* clamp so label never overflows either edge (assume ≤160px wide at 12px) */
+                  left: Math.max(8, Math.min(mw - 168, mobLblPin.cx - 80)),
                   top: mobLblPin.cy + 14,
-                  transform: "translateX(-50%)",
                 } : {
-                  left: Math.min(mobLblPin.cx + 12, mw - 4),
+                  left: Math.min(mobLblPin.cx + 12, mw - 168),
                   top: mobLblPin.cy,
                   transform: "translateY(-50%)",
                 }),
