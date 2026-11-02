@@ -1,7 +1,7 @@
 "use client";
 
 import { useMemo, useRef, useState, useCallback, useEffect } from "react";
-import { useReducedMotion } from "framer-motion";
+import { animate, useReducedMotion } from "framer-motion";
 import { geoNaturalEarth1, geoPath, geoGraticule10 } from "d3-geo";
 import { feature } from "topojson-client";
 import land110m from "world-atlas/land-110m.json";
@@ -35,6 +35,7 @@ export default function TravelMap() {
   const shotDirRef = useRef(0);
   const rafId = useRef<number | null>(null);
   const pendingView = useRef<{ dx: number; dy: number; ox: number; oy: number } | null>(null);
+  const tweenStop = useRef<(() => void) | null>(null);
   const still = useReducedMotion();
 
   /* mobile detection for label visibility */
@@ -123,11 +124,38 @@ export default function TravelMap() {
     [clamp]
   );
 
+  const cancelTween = useCallback(() => {
+    if (tweenStop.current) { tweenStop.current(); tweenStop.current = null; }
+  }, []);
+
+  const tweenView = useCallback((target: View) => {
+    cancelTween();
+    if (still) { setView(target); return; }
+    setView((from) => {
+      let k = from.k, x = from.x, y = from.y;
+      const dk = target.k - from.k, dx = target.x - from.x, dy = target.y - from.y;
+      const controls = animate(0, 1, {
+        duration: 0.7,
+        ease: [0.65, 0, 0.35, 1],
+        onUpdate(t) {
+          k = from.k + dk * t;
+          x = from.x + dx * t;
+          y = from.y + dy * t;
+          setView({ k, x, y });
+        },
+        onComplete() { tweenStop.current = null; },
+      });
+      tweenStop.current = () => controls.stop();
+      return from;
+    });
+  }, [cancelTween, still]);
+
   useEffect(() => {
     const el = svgRef.current;
     if (!el) return;
     const onWheel = (e: WheelEvent) => {
       e.preventDefault();
+      cancelTween();
       const [cx, cy] = toUser(e.clientX, e.clientY);
       zoomBy(e.deltaY < 0 ? 1.12 : 1 / 1.12, cx, cy);
     };
@@ -136,6 +164,7 @@ export default function TravelMap() {
   }, [zoomBy, toUser]);
 
   const onPointerDown = (e: React.PointerEvent) => {
+    cancelTween();
     pointers.current.set(e.pointerId, { x: e.clientX, y: e.clientY });
     if (pointers.current.size === 1) {
       drag.current = { x: e.clientX, y: e.clientY, ox: view.x, oy: view.y, started: false };
@@ -243,7 +272,7 @@ export default function TravelMap() {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
-  const reset = () => setView(clamp(home()));
+  const reset = () => tweenView(clamp(home()));
 
   const handleShot = useCallback((i: number) => {
     shotDirRef.current = i > shot ? 1 : -1;
@@ -259,7 +288,8 @@ export default function TravelMap() {
     const [px, py] = xy;
     setView((v) => {
       const k = Math.max(v.k, 2.4);
-      return clamp({ k, x: W / 2 - px * k, y: H / 2 - py * k });
+      tweenView(clamp({ k, x: W / 2 - px * k, y: H / 2 - py * k }));
+      return v;
     });
   };
 
