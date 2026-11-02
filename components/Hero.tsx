@@ -2,7 +2,7 @@
 
 import React, { useEffect, useRef, useState } from "react";
 import Link from "next/link";
-import { motion, useReducedMotion, useScroll, useMotionValueEvent } from "framer-motion";
+import { motion, useReducedMotion } from "framer-motion";
 import { easeFade } from "@/lib/motion";
 import Plane from "./Plane";
 import { WORLD_COLS, WORLD_ROWS, WORLD_ROWS_DATA } from "@/lib/world-pixels";
@@ -35,61 +35,58 @@ const STAGES_DESKTOP = [
 
 const MOB_COL_START = 20;
 const MOB_COL_END   = 108;
-const MOB_COL_COUNT = MOB_COL_END - MOB_COL_START + 1;
+const MOB_COL_COUNT = MOB_COL_END - MOB_COL_START + 1; // 89
+const MOB_ROW_END   = 38; // rows 0-38
+const MOB_MAP_TOP   = 72; // px from hero top
 
 function getMobileStages(mw: number) {
-  const cell = mw / MOB_COL_COUNT;
-  const mS   = mw / 890;
-  const pins = PIN_CELLS.map(pc => ({
+  const sc      = mw / 375;
+  const cell    = mw / MOB_COL_COUNT;
+  const nameTop = 366 * sc;
+  const pins    = PIN_CELLS.map(pc => ({
     cx: (pc.col - MOB_COL_START + 0.5) * cell,
-    cy: pc.row * cell + cell * 0.5,
+    cy: MOB_MAP_TOP + (pc.row + 0.5) * cell,
   }));
   return [
-    { x: mw / 2,             y: pins[1].cy - 40*mS, flip:  1 as 1 | -1 },
-    { x: pins[0].cx + 4*mS,  y: pins[0].cy - 30*mS, flip:  1 as 1 | -1 },
-    { x: pins[1].cx + 22*mS, y: pins[1].cy - 40*mS, flip: -1 as 1 | -1 },
-    { x: pins[2].cx + 22*mS, y: pins[2].cy - 40*mS, flip:  1 as 1 | -1 },
+    { x: mw / 2,               y: nameTop - 40 * sc, flip:  1 as 1 | -1 },
+    { x: pins[0].cx + 14 * sc, y: pins[0].cy - 26 * sc, flip:  1 as 1 | -1 },
+    { x: pins[1].cx + 14 * sc, y: pins[1].cy - 26 * sc, flip: -1 as 1 | -1 },
+    { x: pins[2].cx + 14 * sc, y: pins[2].cy - 26 * sc, flip:  1 as 1 | -1 },
   ];
 }
 
+/* ────────── labels (stage 0 = rest, no label) ────────── */
 const STAGE_LABELS = [
-  { text: "Now in Los Angeles",       pinIdx: 1, placement: "below" as const, dark: false },
+  { text: "",                         pinIdx: 0, placement: "below" as const, dark: false },
   { text: "Previously in Hyderabad",  pinIdx: 0, placement: "right" as const, dark: false },
   { text: "Currently in Los Angeles", pinIdx: 1, placement: "below" as const, dark: false },
   { text: "Looking for what's next!", pinIdx: 2, placement: "right" as const, dark: true  },
 ];
 
-function progressToStage(p: number): number {
-  if (p < 0.20) return 0;
-  if (p < 0.45) return 1;
-  if (p < 0.70) return 2;
-  return 3;
-}
-
 /* ────────── bezier utilities ────────── */
 function makeLUT(p1x: number, p1y: number, p2x: number, p2y: number, n = 200) {
-  const xs = new Float64Array(n+1), ys = new Float64Array(n+1);
+  const xs = new Float64Array(n + 1), ys = new Float64Array(n + 1);
   for (let i = 0; i <= n; i++) {
-    const t = i/n, u = 1-t;
-    xs[i] = 3*u*u*t*p1x + 3*u*t*t*p2x + t*t*t;
-    ys[i] = 3*u*u*t*p1y + 3*u*t*t*p2y + t*t*t;
+    const t = i / n, u = 1 - t;
+    xs[i] = 3 * u * u * t * p1x + 3 * u * t * t * p2x + t * t * t;
+    ys[i] = 3 * u * u * t * p1y + 3 * u * t * t * p2y + t * t * t;
   }
   return (x: number) => {
     if (x <= 0) return 0; if (x >= 1) return 1;
     let lo = 0, hi = n;
-    while (lo < hi-1) { const m=(lo+hi)>>1; if (xs[m]<x) lo=m; else hi=m; }
-    return ys[lo] + (x-xs[lo])/(xs[hi]-xs[lo])*(ys[hi]-ys[lo]);
+    while (lo < hi - 1) { const m = (lo + hi) >> 1; if (xs[m] < x) lo = m; else hi = m; }
+    return ys[lo] + (x - xs[lo]) / (xs[hi] - xs[lo]) * (ys[hi] - ys[lo]);
   };
 }
 const EASE_MV  = makeLUT(0.22, 1, 0.36, 1);
 const EASE_FLY = makeLUT(0.65, 0, 0.35, 1);
 
-function lerp(a: number, b: number, t: number) { return a+(b-a)*t; }
+function lerp(a: number, b: number, t: number) { return a + (b - a) * t; }
 function qBezPt(t: number, p0: number, c: number, p1: number) {
-  const u = 1-t; return u*u*p0 + 2*u*t*c + t*t*p1;
+  const u = 1 - t; return u * u * p0 + 2 * u * t * c + t * t * p1;
 }
 function qBezTan(t: number, p0: number, c: number, p1: number) {
-  return 2*(1-t)*(c-p0) + 2*t*(p1-c);
+  return 2 * (1 - t) * (c - p0) + 2 * t * (p1 - c);
 }
 
 /* ────────── canvas dot builders ────────── */
@@ -98,33 +95,35 @@ let _dotsDesktop: Dot[] | null = null;
 function buildDesktopDots(): Dot[] {
   if (_dotsDesktop) return _dotsDesktop;
   _dotsDesktop = [];
-  const W = WORLD_COLS*CELL, H = WORLD_ROWS*CELL;
-  for (let row=0; row<WORLD_ROWS; row++) {
+  const W = WORLD_COLS * CELL, H = WORLD_ROWS * CELL;
+  for (let row = 0; row < WORLD_ROWS; row++) {
     const rs = WORLD_ROWS_DATA[row];
-    for (let col=0; col<WORLD_COLS; col++) {
-      if (rs[col]!=="1") continue;
+    for (let col = 0; col < WORLD_COLS; col++) {
+      if (rs[col] !== "1") continue;
       _dotsDesktop.push({
-        fx: col*CELL+(CELL-DOT)/2, fy: row*CELL+(CELL-DOT)/2,
-        sx: Math.random()*W, sy: Math.random()*H,
-        flyStart: Math.random()*600, flyDur: 800+Math.random()*400,
-        blinks: Array.from({length:2+Math.floor(Math.random()*2)},()=>Math.random()*400).sort((a,b)=>a-b),
+        fx: col * CELL + (CELL - DOT) / 2, fy: row * CELL + (CELL - DOT) / 2,
+        sx: Math.random() * W, sy: Math.random() * H,
+        flyStart: Math.random() * 600, flyDur: 800 + Math.random() * 400,
+        blinks: Array.from({ length: 2 + Math.floor(Math.random() * 2) }, () => Math.random() * 400).sort((a, b) => a - b),
       });
     }
   }
   return _dotsDesktop;
 }
 function buildMobileDots(mw: number): Dot[] {
-  const cell = mw/MOB_COL_COUNT, dot = cell/2, H = WORLD_ROWS*cell;
+  const cell = mw / MOB_COL_COUNT, dot = cell / 2;
+  const W = mw, H = (MOB_ROW_END + 1) * cell;
   const dots: Dot[] = [];
-  for (let row=0; row<WORLD_ROWS; row++) {
+  for (let row = 0; row <= MOB_ROW_END; row++) {
     const rs = WORLD_ROWS_DATA[row];
-    for (let col=MOB_COL_START; col<=MOB_COL_END; col++) {
-      if (!rs || rs[col]!=="1") continue;
+    for (let col = MOB_COL_START; col <= MOB_COL_END; col++) {
+      if (!rs || rs[col] !== "1") continue;
       dots.push({
-        fx: (col-MOB_COL_START)*cell+(cell-dot)/2, fy: row*cell+(cell-dot)/2,
-        sx: Math.random()*mw, sy: Math.random()*H,
-        flyStart: Math.random()*600, flyDur: 800+Math.random()*400,
-        blinks: Array.from({length:2+Math.floor(Math.random()*2)},()=>Math.random()*400).sort((a,b)=>a-b),
+        fx: (col - MOB_COL_START) * cell + (cell - dot) / 2,
+        fy: row * cell + (cell - dot) / 2,
+        sx: Math.random() * W, sy: Math.random() * H,
+        flyStart: Math.random() * 600, flyDur: 800 + Math.random() * 400,
+        blinks: Array.from({ length: 2 + Math.floor(Math.random() * 2) }, () => Math.random() * 400).sort((a, b) => a - b),
       });
     }
   }
@@ -143,7 +142,7 @@ function IntroLink({ href, children }: { href: string; children: React.ReactNode
 type Phase = "parked" | "flip_wait" | "flying";
 interface AnimState {
   phase: Phase;
-  x: number; y: number; flip: 1|-1;
+  x: number; y: number; flip: 1 | -1;
   parkedStage: number;
   fromX: number; fromY: number;
   toX: number; toY: number;
@@ -152,19 +151,11 @@ interface AnimState {
   destStage: number;
   flipStartTime: number; nextStage: number;
 }
+type Stage = { x: number; y: number; flip: 1 | -1 };
 
-/* ────────── shared animation hook ────────── */
-type Stage = { x:number; y:number; flip: 1|-1 };
-type ScrollProgress = ReturnType<typeof useScroll>["scrollYProgress"];
-
+/* ────────── animation hook (click-driven) ────────── */
 function useHeroAnimation({
-  active,
-  reduced,
-  stagesRef,
-  planeOuterRef,
-  planeFlipRef,
-  planeInnerRef,
-  scrollYProgress,
+  active, reduced, stagesRef, planeOuterRef, planeFlipRef, planeInnerRef,
 }: {
   active: boolean;
   reduced: boolean;
@@ -172,7 +163,6 @@ function useHeroAnimation({
   planeOuterRef: React.RefObject<HTMLDivElement | null>;
   planeFlipRef: React.RefObject<HTMLDivElement | null>;
   planeInnerRef: React.RefObject<HTMLDivElement | null>;
-  scrollYProgress: ScrollProgress;
 }) {
   const animRef = useRef<AnimState>({
     phase: "parked", x: 720, y: 30, flip: 1,
@@ -182,15 +172,16 @@ function useHeroAnimation({
     destStage: 0, flipStartTime: 0, nextStage: 0,
   });
 
-  const targetStageRef = useRef(0);
+  const targetRef       = useRef(0); // 0=rest, 1/2/3=pin
+  const activePinRef    = useRef<number | null>(null); // for fresh reads in handlers
 
-  const [labelStage,   setLabelStage]   = useState<number>(-1);
+  const [labelStage,   setLabelStage]   = useState(-1);
   const [typedText,    setTypedText]    = useState("");
   const [labelDone,    setLabelDone]    = useState(false);
   const [labelVisible, setLabelVisible] = useState(false);
   const [pulsingPin,   setPulsingPin]   = useState<number | null>(null);
-  const [activePinStage, setActivePinStage] = useState(-1);
-  const [loadDone,     setLoadDone]     = useState(false);
+  const [activePinNum, setActivePinNum] = useState<number | null>(null);
+  const [hintVisible,  setHintVisible]  = useState(false);
 
   const typeTimerRef = useRef<ReturnType<typeof setInterval> | null>(null);
   const labelFadeRef = useRef<ReturnType<typeof setTimeout>  | null>(null);
@@ -199,10 +190,8 @@ function useHeroAnimation({
   const typeLabel = useRef((text: string, stage: number) => {
     if (typeTimerRef.current) clearInterval(typeTimerRef.current);
     if (labelFadeRef.current) clearTimeout(labelFadeRef.current);
-    setTypedText("");
-    setLabelDone(false);
-    setLabelStage(stage);
-    setLabelVisible(true);
+    setTypedText(""); setLabelDone(false);
+    setLabelStage(stage); setLabelVisible(true);
     let i = 0;
     typeTimerRef.current = setInterval(() => {
       i++;
@@ -247,17 +236,14 @@ function useHeroAnimation({
       inner.style.transition = "transform 400ms cubic-bezier(0.65,0,0.35,1)";
       inner.style.transform  = "translate(-50%,-50%) rotate(0deg)";
     }
-    setActivePinStage(stage);
-    // Only show label when this is the final destination
-    if (targetStageRef.current === stage) {
+    if (stage > 0 && targetRef.current === stage) {
       typeLabel.current(STAGE_LABELS[stage].text, stage);
-      const pinNum = STAGE_LABELS[stage].pinIdx + 1;
-      setPulsingPin(pinNum);
+      setPulsingPin(stage);
       setTimeout(() => setPulsingPin(null), 480);
     }
   });
 
-  /* rAF tick with reconciler */
+  /* rAF tick -- direct flight reconciler, retarget mid-flight */
   const tickFnRef = useRef<(now: number) => void>(() => {});
   tickFnRef.current = (now: number) => {
     if (!active) return;
@@ -267,51 +253,71 @@ function useHeroAnimation({
     if (!outer || !inner) return;
 
     if (anim.phase === "flying") {
-      const elapsed = now - anim.startTime;
-      const rawT    = Math.min(elapsed / anim.duration, 1);
-      const t       = EASE_FLY(rawT);
-      const x  = qBezPt(t, anim.fromX, anim.ctrlX, anim.toX);
-      const y  = qBezPt(t, anim.fromY, anim.ctrlY, anim.toY);
-      const dx = qBezTan(t, anim.fromX, anim.ctrlX, anim.toX);
-      const dy = qBezTan(t, anim.fromY, anim.ctrlY, anim.toY);
-      const angle   = Math.atan2(dy, dx) * 180 / Math.PI;
-      const clamped = Math.max(-20, Math.min(20, angle));
-      anim.x = x; anim.y = y;
-      outer.style.left = `${x}px`;
-      outer.style.top  = `${y}px`;
-      inner.style.transform = `translate(-50%,-50%) rotate(${clamped}deg)`;
-      if (rawT >= 1) {
-        anim.x = anim.toX; anim.y = anim.toY;
-        outer.style.left = `${anim.toX}px`;
-        outer.style.top  = `${anim.toY}px`;
-        onArrived.current(anim.destStage);
+      const target = targetRef.current;
+      if (anim.destStage !== target) {
+        // Retarget from current position mid-flight
+        fadeLabel.current();
+        const tgt  = stagesRef.current[target];
+        const cx   = (anim.x + tgt.x) / 2;
+        const cy   = (anim.y + tgt.y) / 2 - 120;
+        anim.fromX = anim.x; anim.fromY = anim.y;
+        anim.toX   = tgt.x;  anim.toY   = tgt.y;
+        anim.ctrlX = cx;     anim.ctrlY  = cy;
+        anim.startTime = now; anim.duration = 1800; anim.destStage = target;
+        inner.style.transition = "none";
+      } else {
+        const elapsed = now - anim.startTime;
+        const rawT    = Math.min(elapsed / anim.duration, 1);
+        const t       = EASE_FLY(rawT);
+        const x  = qBezPt(t, anim.fromX, anim.ctrlX, anim.toX);
+        const y  = qBezPt(t, anim.fromY, anim.ctrlY, anim.toY);
+        const dx = qBezTan(t, anim.fromX, anim.ctrlX, anim.toX);
+        const dy = qBezTan(t, anim.fromY, anim.ctrlY, anim.toY);
+        const clamped = Math.max(-20, Math.min(20, Math.atan2(dy, dx) * 180 / Math.PI));
+        anim.x = x; anim.y = y;
+        outer.style.left = `${x}px`; outer.style.top = `${y}px`;
+        inner.style.transform = `translate(-50%,-50%) rotate(${clamped}deg)`;
+        if (rawT >= 1) {
+          anim.x = anim.toX; anim.y = anim.toY;
+          outer.style.left = `${anim.toX}px`; outer.style.top = `${anim.toY}px`;
+          onArrived.current(anim.destStage);
+        }
       }
     } else if (anim.phase === "flip_wait") {
-      if (now - anim.flipStartTime >= 600) {
+      const target = targetRef.current;
+      if (target !== anim.nextStage) {
+        // Target changed during flip -- abort and retarget
+        fadeLabel.current();
+        const tgt  = stagesRef.current[target];
+        const cx   = (anim.x + tgt.x) / 2;
+        const cy   = (anim.y + tgt.y) / 2 - 120;
+        anim.phase = "flying";
+        anim.fromX = anim.x; anim.fromY = anim.y;
+        anim.toX   = tgt.x;  anim.toY   = tgt.y;
+        anim.ctrlX = cx;     anim.ctrlY  = cy;
+        anim.startTime = now; anim.duration = 1800; anim.destStage = target;
+        inner.style.transition = "none";
+      } else if (now - anim.flipStartTime >= 600) {
         startFlight.current(anim.nextStage, now);
       }
     } else if (anim.phase === "parked") {
-      /* reconciler: step one stage at a time toward targetStageRef */
-      const target = targetStageRef.current;
+      const target = targetRef.current;
       if (anim.parkedStage !== target) {
-        const nextStep = anim.parkedStage + Math.sign(target - anim.parkedStage);
         const flipDiv = planeFlipRef.current;
         if (!flipDiv) return;
         fadeLabel.current();
-        const tgt = stagesRef.current[nextStep];
+        const tgt = stagesRef.current[target];
         const cx  = (anim.x + tgt.x) / 2;
         const cy  = (anim.y + tgt.y) / 2 - 120;
         const dx  = qBezTan(0, anim.x, cx, tgt.x);
         const departFlip: 1 | -1 = dx >= 0 ? 1 : -1;
         if (departFlip !== anim.flip) {
-          anim.phase         = "flip_wait";
-          anim.flipStartTime = now;
-          anim.nextStage     = nextStep;
-          anim.flip          = departFlip;
+          anim.phase = "flip_wait"; anim.flipStartTime = now;
+          anim.nextStage = target; anim.flip = departFlip;
           flipDiv.style.transition = "transform 600ms cubic-bezier(0.65,0,0.35,1)";
           flipDiv.style.transform  = `scaleX(${departFlip})`;
         } else {
-          startFlight.current(nextStep, now);
+          startFlight.current(target, now);
         }
       }
     }
@@ -326,19 +332,16 @@ function useHeroAnimation({
   /* load sequence */
   useEffect(() => {
     if (!active) return;
-    const sp  = stagesRef.current[0];
+    const sp   = stagesRef.current[0];
     const anim = animRef.current;
 
     if (reduced) {
-      anim.x = sp.x; anim.y = sp.y; anim.parkedStage = 0;
+      anim.x = sp.x; anim.y = sp.y; anim.parkedStage = 0; anim.flip = sp.flip;
       const outer   = planeOuterRef.current;
       const flipDiv = planeFlipRef.current;
       if (outer)   { outer.style.left = `${sp.x}px`; outer.style.top = `${sp.y}px`; outer.style.opacity = "1"; }
       if (flipDiv) { flipDiv.style.transition = "none"; flipDiv.style.transform = `scaleX(${sp.flip})`; }
-      anim.flip = sp.flip;
-      setActivePinStage(0);
-      setLoadDone(true);
-      typeLabel.current(STAGE_LABELS[0].text, 0);
+      setHintVisible(true);
       return;
     }
 
@@ -351,7 +354,6 @@ function useHeroAnimation({
 
     const t = setTimeout(() => {
       if (planeOuterRef.current) planeOuterRef.current.style.opacity = "1";
-      setLoadDone(true);
       const a = animRef.current;
       a.phase = "flying"; a.fromX = sp.x; a.fromY = sp.y - 80;
       a.toX = sp.x; a.toY = sp.y; a.ctrlX = sp.x; a.ctrlY = sp.y - 110;
@@ -359,61 +361,92 @@ function useHeroAnimation({
       const inner = planeInnerRef.current;
       if (inner) inner.style.transition = "none";
     }, 800);
-    return () => clearTimeout(t);
+    const hintT = setTimeout(() => setHintVisible(true), 2500);
+    return () => { clearTimeout(t); clearTimeout(hintT); };
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [active, reduced]);
 
-  /* sync scroll position when load completes */
-  useMotionValueEvent(scrollYProgress, "change", (p) => {
-    if (!loadDone) return;
-    targetStageRef.current = progressToStage(p);
-  });
+  /* Esc key deselect */
+  const deselectFnRef = useRef<() => void>(() => {});
+  deselectFnRef.current = () => {
+    activePinRef.current = null;
+    setActivePinNum(null);
+    targetRef.current = 0;
+    fadeLabel.current();
+  };
   useEffect(() => {
-    if (!loadDone) return;
-    targetStageRef.current = progressToStage(scrollYProgress.get());
-  // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [loadDone]);
+    if (!active) return;
+    const h = (e: KeyboardEvent) => { if (e.key === "Escape") deselectFnRef.current(); };
+    window.addEventListener("keydown", h);
+    return () => window.removeEventListener("keydown", h);
+  }, [active]);
 
-  return { labelStage, typedText, labelDone, labelVisible, pulsingPin, activePinStage };
+  const handlePinClick = (pinNum: number) => {
+    if (activePinRef.current === pinNum) {
+      activePinRef.current = null;
+      setActivePinNum(null);
+      targetRef.current = 0;
+      fadeLabel.current();
+    } else {
+      activePinRef.current = pinNum;
+      setActivePinNum(pinNum);
+      targetRef.current = pinNum;
+      fadeLabel.current();
+      setHintVisible(false);
+    }
+  };
+
+  const handleDeselect = () => deselectFnRef.current();
+
+  return { labelStage, typedText, labelDone, labelVisible, pulsingPin, activePinNum, hintVisible, handlePinClick, handleDeselect };
 }
 
-/* ────────── PinRing helper ────────── */
-function PinRow({
-  pin, activeStage, pulsingPin, dotSize, ringSize, idx, reduced,
-  ease,
+/* ────────── PinButton ────────── */
+function PinButton({
+  pin, isActive, isPulsing, dotSize, ringSize, idx, reduced, ease, label, onClick,
 }: {
   pin: typeof PINS[number];
-  activeStage: number;
-  pulsingPin: number | null;
+  isActive: boolean;
+  isPulsing: boolean;
   dotSize: number;
   ringSize: number;
   idx: number;
   reduced: boolean;
-  ease: [number,number,number,number];
+  ease: [number, number, number, number];
+  label: string;
+  onClick: () => void;
 }) {
-  const isActive  = activeStage === pin.num;
-  const isPulsing = pulsingPin === pin.num;
-  const fontSize  = Math.round(dotSize * 0.5);
+  const [hovered, setHovered] = useState(false);
+  const ringOpacity = isActive || hovered ? 1 : 0.35;
+  const fontSize    = Math.round(dotSize * 0.5);
   return (
-    <motion.span className="absolute" style={{
-      width: ringSize, height: ringSize,
-      left: "50%", top: "50%",
-      transform: "translate(-50%,-50%)",
-      display: "grid", placeItems: "center",
-    }}
+    <motion.button
+      aria-pressed={isActive}
+      aria-label={label}
+      onClick={(e) => { e.stopPropagation(); onClick(); }}
+      onMouseEnter={() => setHovered(true)}
+      onMouseLeave={() => setHovered(false)}
+      className="absolute focus-visible:outline-2 focus-visible:outline-offset-4 focus-visible:outline-current"
+      style={{
+        width: ringSize + 8, height: ringSize + 8,
+        left: "50%", top: "50%",
+        transform: "translate(-50%,-50%)",
+        background: "none", border: "none", cursor: "pointer",
+        padding: 0, zIndex: 20, outline: "none",
+        display: "grid", placeItems: "center",
+      }}
       initial={{ scale: 0.6, opacity: 0 }}
       animate={{ scale: 1, opacity: 1 }}
-      transition={{ duration: reduced ? 0 : 0.4, delay: reduced ? 0 : 1.8+idx*0.1, ease }}
+      transition={{ duration: reduced ? 0 : 0.4, delay: reduced ? 0 : 1.8 + idx * 0.1, ease }}
     >
-      {/* base ring — always visible */}
       <span className="absolute rounded-full" style={{
         width: ringSize, height: ringSize,
         border: `1px solid ${pin.color}`,
-        opacity: isActive ? 1 : 0.35,
-        transition: "opacity 300ms ease",
-        position: "absolute", left: 0, top: 0,
+        opacity: ringOpacity,
+        transition: "opacity 200ms ease",
+        left: "50%", top: "50%",
+        transform: "translate(-50%,-50%)",
       }} />
-      {/* pulse ring — arrival only */}
       {isPulsing && (
         <motion.span className="absolute rounded-full"
           key={`pulse-${pin.num}-${Date.now()}`}
@@ -423,21 +456,21 @@ function PinRow({
           style={{
             width: ringSize, height: ringSize,
             border: `1px solid ${pin.color}`,
-            position: "absolute", left: 0, top: 0,
+            left: "50%", top: "50%",
+            transform: "translate(-50%,-50%)",
           }}
         />
       )}
-      {/* dot */}
       <span className="relative grid place-items-center rounded-full" style={{
         width: dotSize, height: dotSize, backgroundColor: pin.color,
         fontFamily: "var(--font-mono)", fontSize, fontWeight: 500,
         letterSpacing: "0.1em", color: "#ffffff", zIndex: 1,
       }}>{pin.num}</span>
-    </motion.span>
+    </motion.button>
   );
 }
 
-/* ────────── LabelBox helper ────────── */
+/* ────────── LabelBox ────────── */
 function LabelBox({
   lbl, labelVisible, typedText, labelDone, padding, fontSize,
 }: {
@@ -452,8 +485,7 @@ function LabelBox({
     <div style={{
       backgroundColor: lbl.dark ? "#273142" : "rgba(255,255,255,0.92)",
       border: `1px solid ${lbl.dark ? "transparent" : "#d6d6d2"}`,
-      padding,
-      whiteSpace: "nowrap",
+      padding, whiteSpace: "nowrap",
       fontFamily: "var(--font-sans)", fontSize, fontWeight: 500,
       lineHeight: 1.5, color: lbl.dark ? "#fcfcfb" : "#211f1c",
       opacity: labelVisible ? 1 : 0,
@@ -461,61 +493,76 @@ function LabelBox({
     }}>
       {typedText}
       {!labelDone && (
-        <span style={{ display:"inline-block", width:1, animation:"hero-caret 0.7s step-end infinite" }}>|</span>
+        <span style={{ display: "inline-block", width: 1, animation: "hero-caret 0.7s step-end infinite" }}>|</span>
       )}
     </div>
   );
 }
 
-/* ────────── IntroText helper ────────── */
+/* ────────── IntroText ────────── */
 function IntroText({ reduced, mobile }: { reduced: boolean; mobile: boolean }) {
-  const ease: [number,number,number,number] = [0.22, 1, 0.36, 1];
+  const ease: [number, number, number, number] = [0.22, 1, 0.36, 1];
   const h1Size = mobile ? 34 : 64;
   const pSize  = mobile ? 16 : 18;
   const p2Size = mobile ? 15 : 16;
   return (
     <>
       <motion.h1
-        style={{ fontFamily:"var(--font-sans)", fontSize:h1Size, fontWeight:600,
-                 lineHeight: mobile ? 1.1 : 1.04, letterSpacing:"-0.03em", color:"#211f1c" }}
+        style={{ fontFamily: "var(--font-sans)", fontSize: h1Size, fontWeight: 600,
+                 lineHeight: mobile ? 1.1 : 1.04, letterSpacing: "-0.03em", color: "#211f1c" }}
         initial={{ opacity: 0 }}
         animate={{ opacity: 1 }}
-        transition={{ duration: reduced ? 0 : 0.7, delay: reduced ? 0 : 1.2, ease:[0.4,0,0.2,1] }}
+        transition={{ duration: reduced ? 0 : 0.7, delay: reduced ? 0 : 1.2, ease: [0.4, 0, 0.2, 1] }}
       >Shreya Shanmugam.</motion.h1>
 
       <motion.p
-        style={{ marginTop: mobile ? 8 : 10, fontFamily:"var(--font-sans)", fontSize:pSize, lineHeight:1.6 }}
-        initial={{ opacity:0, y:16 }}
-        animate={{ opacity:1, y:0 }}
+        style={{ marginTop: mobile ? 8 : 10, fontFamily: "var(--font-sans)", fontSize: pSize, lineHeight: 1.6 }}
+        initial={{ opacity: 0, y: 16 }}
+        animate={{ opacity: 1, y: 0 }}
         transition={{ duration: reduced ? 0 : 0.6, delay: reduced ? 0 : 1.7, ease }}
       >
-        <span style={{ fontWeight:400, color:"#211f1c" }}>Designing to make complex systems feel </span>
-        <span style={{ fontWeight:700, color:"#3d6bc4" }}>simple</span>
-        <span style={{ fontWeight:700, color:"#b3c3e5" }}>.</span>
+        <span style={{ fontWeight: 400, color: "#211f1c" }}>Designing to make complex systems feel </span>
+        <span style={{ fontWeight: 700, color: "#3d6bc4" }}>simple</span>
+        <span style={{ fontWeight: 700, color: "#b3c3e5" }}>.</span>
       </motion.p>
 
       <motion.p className="pointer-events-auto"
-        style={{ marginTop: mobile ? 8 : 10, fontFamily:"var(--font-sans)", fontSize:p2Size,
-                 lineHeight:1.6, color:"#434343" }}
-        initial={{ opacity:0, y:16 }}
-        animate={{ opacity:1, y:0 }}
+        style={{ marginTop: mobile ? 8 : 10, fontFamily: "var(--font-sans)", fontSize: p2Size,
+                 lineHeight: 1.6, color: "#434343" }}
+        initial={{ opacity: 0, y: 16 }}
+        animate={{ opacity: 1, y: 0 }}
         transition={{ duration: reduced ? 0 : 0.6, delay: reduced ? 0 : 2.0, ease }}
       >
-        <span style={{ fontWeight:400 }}>Currently</span>{" "}
-        <span style={{ fontWeight:700 }}>@</span>{" "}
+        <span style={{ fontWeight: 400 }}>Currently</span>{" "}
+        <span style={{ fontWeight: 700 }}>@</span>{" "}
         <IntroLink href="/about">USC Iovine and Young Academy</IntroLink>{" "}
-        <span style={{ fontWeight:400 }}>and</span>{" "}
+        <span style={{ fontWeight: 400 }}>and</span>{" "}
         <IntroLink href="/about">Marshall</IntroLink>
-        <span style={{ fontWeight:700 }}>.</span><br />
-        <span style={{ fontWeight:400 }}>Consulting</span>{" "}
-        <span style={{ fontWeight:700 }}>@</span>{" "}
+        <span style={{ fontWeight: 700 }}>.</span><br />
+        <span style={{ fontWeight: 400 }}>Consulting</span>{" "}
+        <span style={{ fontWeight: 700 }}>@</span>{" "}
         <IntroLink href="#disney">Disney Experiences</IntroLink>{" "}
-        <span style={{ fontWeight:400 }}>with ProductSC, previously</span>{" "}
-        <span style={{ fontWeight:700 }}>@</span>{" "}
+        <span style={{ fontWeight: 400 }}>with ProductSC, previously</span>{" "}
+        <span style={{ fontWeight: 700 }}>@</span>{" "}
         <IntroLink href="#synechron">Synechron</IntroLink>
-        <span style={{ fontWeight:700 }}>.</span>
+        <span style={{ fontWeight: 700 }}>.</span>
       </motion.p>
     </>
+  );
+}
+
+/* ────────── PsstHint ────────── */
+function PsstHint({ mobile, visible }: { mobile: boolean; visible: boolean }) {
+  return (
+    <div className="pointer-events-none absolute" style={{
+      bottom: mobile ? 16 : 40, left: mobile ? 16 : 40,
+      opacity: visible ? 1 : 0, transition: "opacity 400ms ease",
+      fontFamily: "var(--font-mono)", fontSize: 11, fontWeight: 500,
+      letterSpacing: "0.08em", textTransform: "uppercase" as const,
+      color: "#a8a8a3", zIndex: 30,
+    }}>
+      psst, {mobile ? "tap" : "click"} the pins
+    </div>
   );
 }
 
@@ -524,19 +571,17 @@ function IntroText({ reduced, mobile }: { reduced: boolean; mobile: boolean }) {
 ═══════════════════════════════════════════════════════ */
 function HeroDesktop() {
   const [active, setActive] = useState(false);
-  const [s, setS] = useState(1);
+  const [s, setS]           = useState(1);
   const reduced = useReducedMotion() ?? false;
-  const ease: [number,number,number,number] = [0.22, 1, 0.36, 1];
+  const ease: [number, number, number, number] = [0.22, 1, 0.36, 1];
 
-  const outerRef      = useRef<HTMLDivElement>(null);
   const canvasRef     = useRef<HTMLCanvasElement>(null);
   const planeOuterRef = useRef<HTMLDivElement>(null);
   const planeFlipRef  = useRef<HTMLDivElement>(null);
   const planeInnerRef = useRef<HTMLDivElement>(null);
 
-  const stagesRef = useRef(STAGES_DESKTOP.map(s => ({ x:s.x, y:s.y, flip:s.flip })));
+  const stagesRef = useRef(STAGES_DESKTOP.map(s => ({ x: s.x, y: s.y, flip: s.flip })));
 
-  /* matchMedia gate */
   useEffect(() => {
     const mq = window.matchMedia("(min-width: 768px)");
     const sync = (matches: boolean) => setActive(matches);
@@ -546,34 +591,30 @@ function HeroDesktop() {
     return () => mq.removeEventListener("change", h);
   }, []);
 
-  /* viewport scale */
   useEffect(() => {
     if (!active) return;
-    const update = () => {
-      setS(Math.min(window.innerWidth / 1440, window.innerHeight / 720, 1.25));
-    };
+    const update = () => setS(Math.min(window.innerWidth / 1440, window.innerHeight / 720, 1.25));
     update();
     window.addEventListener("resize", update);
     return () => window.removeEventListener("resize", update);
   }, [active]);
 
-  /* desktop canvas */
   useEffect(() => {
     if (!active) return;
     const canvas = canvasRef.current; if (!canvas) return;
     const ctx = canvas.getContext("2d"); if (!ctx) return;
     const dpr = window.devicePixelRatio || 1;
-    const W = WORLD_COLS*CELL, H = WORLD_ROWS*CELL;
-    canvas.width = W*dpr; canvas.height = H*dpr;
+    const W = WORLD_COLS * CELL, H = WORLD_ROWS * CELL;
+    canvas.width = W * dpr; canvas.height = H * dpr;
     canvas.style.width = `${W}px`; canvas.style.height = `${H}px`;
     ctx.scale(dpr, dpr);
 
     function drawFinal() {
-      ctx!.clearRect(0,0,W,H); ctx!.fillStyle="#888888"; ctx!.globalAlpha=1;
-      for (let r=0; r<WORLD_ROWS; r++) {
-        const rs=WORLD_ROWS_DATA[r];
-        for (let c=0; c<WORLD_COLS; c++)
-          if (rs[c]==="1") ctx!.fillRect(c*CELL+(CELL-DOT)/2, r*CELL+(CELL-DOT)/2, DOT, DOT);
+      ctx!.clearRect(0, 0, W, H); ctx!.fillStyle = "#888888"; ctx!.globalAlpha = 1;
+      for (let r = 0; r < WORLD_ROWS; r++) {
+        const rs = WORLD_ROWS_DATA[r];
+        for (let c = 0; c < WORLD_COLS; c++)
+          if (rs[c] === "1") ctx!.fillRect(c * CELL + (CELL - DOT) / 2, r * CELL + (CELL - DOT) / 2, DOT, DOT);
       }
     }
     if (reduced) { drawFinal(); return; }
@@ -582,112 +623,114 @@ function HeroDesktop() {
     const t0 = performance.now(); let raf = 0;
     function frame(now: number) {
       const e = now - t0;
-      ctx!.clearRect(0,0,W,H); ctx!.fillStyle="#888888";
+      ctx!.clearRect(0, 0, W, H); ctx!.fillStyle = "#888888";
       for (const d of dots) {
-        let op=0;
-        for (let b=0;b<d.blinks.length;b++) { if (e<d.blinks[b]) break; op=(b&1)===0?1:0; }
-        if (e>=d.flyStart+d.flyDur) op=1;
-        if (op===0) continue;
-        let x:number, y:number;
-        if (e<d.flyStart) { x=d.sx; y=d.sy; }
-        else if (e>=d.flyStart+d.flyDur) { x=d.fx; y=d.fy; }
-        else { const p=EASE_MV((e-d.flyStart)/d.flyDur); x=lerp(d.sx,d.fx,p); y=lerp(d.sy,d.fy,p); }
-        ctx!.globalAlpha=op; ctx!.fillRect(x,y,DOT,DOT);
+        let op = 0;
+        for (let b = 0; b < d.blinks.length; b++) { if (e < d.blinks[b]) break; op = (b & 1) === 0 ? 1 : 0; }
+        if (e >= d.flyStart + d.flyDur) op = 1;
+        if (op === 0) continue;
+        let x: number, y: number;
+        if (e < d.flyStart) { x = d.sx; y = d.sy; }
+        else if (e >= d.flyStart + d.flyDur) { x = d.fx; y = d.fy; }
+        else { const p = EASE_MV((e - d.flyStart) / d.flyDur); x = lerp(d.sx, d.fx, p); y = lerp(d.sy, d.fy, p); }
+        ctx!.globalAlpha = op; ctx!.fillRect(x, y, DOT, DOT);
       }
-      ctx!.globalAlpha=1;
-      if (e<2000) raf=requestAnimationFrame(frame); else drawFinal();
+      ctx!.globalAlpha = 1;
+      if (e < 2000) raf = requestAnimationFrame(frame); else drawFinal();
     }
     raf = requestAnimationFrame(frame);
     return () => cancelAnimationFrame(raf);
   }, [active, reduced]);
 
-  const { scrollYProgress } = useScroll({ target: outerRef, offset: ["start start","end end"] });
+  const { labelStage, typedText, labelDone, labelVisible, pulsingPin, activePinNum, hintVisible, handlePinClick, handleDeselect } =
+    useHeroAnimation({ active, reduced, stagesRef, planeOuterRef, planeFlipRef, planeInnerRef });
 
-  const { labelStage, typedText, labelDone, labelVisible, pulsingPin, activePinStage } =
-    useHeroAnimation({ active, reduced, stagesRef, planeOuterRef, planeFlipRef, planeInnerRef, scrollYProgress });
-
-  const lbl    = labelStage >= 0 ? STAGE_LABELS[labelStage] : null;
+  const lbl    = labelStage > 0 ? STAGE_LABELS[labelStage] : null;
   const lblPin = lbl != null ? PINS[lbl.pinIdx] : null;
 
   return (
-    <div ref={outerRef} style={{ height:"500vh" }}>
-      <section className="sticky top-0 w-full overflow-hidden"
-        style={{ height:"100vh", backgroundColor:"#e9e9e6" }}>
+    <section
+      style={{ height: "calc(100svh - 64px)", position: "relative", overflow: "hidden", backgroundColor: "#e9e9e6" }}
+      onClick={handleDeselect}
+    >
+      <div className="pointer-events-none absolute inset-0"
+        style={{ backgroundColor: "rgba(108,159,222,0.20)" }} />
+      <div className="pointer-events-none absolute inset-0" style={{
+        background: "radial-gradient(ellipse at 50% 45%, transparent 35%, rgba(108,159,222,0.12) 100%)",
+      }} />
 
-        <div className="pointer-events-none absolute inset-0"
-          style={{ backgroundColor:"rgba(108,159,222,0.20)" }} />
-        <div className="pointer-events-none absolute inset-0" style={{
-          background:"radial-gradient(ellipse at 50% 45%, transparent 35%, rgba(108,159,222,0.12) 100%)",
+      {/* 1440x720 stage -- pointer-events-none so background clicks reach the section */}
+      <div className="absolute left-1/2 top-1/2 pointer-events-none" style={{
+        width: 1440, height: 720,
+        transform: `translate(-50%,-50%) scale(${s})`,
+        transformOrigin: "center",
+      }}>
+        <canvas ref={canvasRef} className="absolute" aria-hidden="true" style={{
+          top: MAP_TOP, left: 0, zIndex: 1,
+          WebkitMaskImage: "linear-gradient(to right, transparent 0, #000 6%, #000 94%, transparent 100%)",
+          maskImage: "linear-gradient(to right, transparent 0, #000 6%, #000 94%, transparent 100%)",
         }} />
 
-        {/* 1440×720 stage */}
-        <div className="absolute left-1/2 top-1/2" style={{
-          width:1440, height:720,
-          transform:`translate(-50%,-50%) scale(${s})`,
-          transformOrigin:"center",
-        }}>
-          {/* pixel map */}
-          <canvas ref={canvasRef} className="absolute" aria-hidden="true" style={{
-            top:MAP_TOP, left:0, zIndex:1,
-            WebkitMaskImage:"linear-gradient(to right, transparent 0, #000 6%, #000 94%, transparent 100%)",
-            maskImage:"linear-gradient(to right, transparent 0, #000 6%, #000 94%, transparent 100%)",
-          }} />
+        <div className="pointer-events-none absolute" style={{
+          width: 1540, height: 642, left: -50, top: 10, zIndex: 2,
+          background: "radial-gradient(closest-side, rgba(255,255,255,0.82), rgba(255,255,255,0))",
+        }} />
 
-          {/* white glow */}
-          <div className="pointer-events-none absolute" style={{
-            width:1540, height:642, left:-50, top:10, zIndex:2,
-            background:"radial-gradient(closest-side, rgba(255,255,255,0.82), rgba(255,255,255,0))",
-          }} />
-
-          {/* plane */}
-          <div ref={planeOuterRef} className="absolute pointer-events-none"
-            style={{ left:720, top:44, zIndex:10, opacity:0, transition:"opacity 0.8s ease" }}>
-            <div ref={planeFlipRef}
-              style={{ transform:"scaleX(1)", transition:"transform 600ms cubic-bezier(0.65,0,0.35,1)" }}>
-              <div ref={planeInnerRef}
-                style={{ transform:"translate(-50%,-50%) rotate(0deg)", transition:"none" }}>
-                <Plane width={132} />
-              </div>
+        <div ref={planeOuterRef} className="absolute pointer-events-none"
+          style={{ left: 720, top: 44, zIndex: 10, opacity: 0, transition: "opacity 0.8s ease" }}>
+          <div ref={planeFlipRef}
+            style={{ transform: "scaleX(1)", transition: "transform 600ms cubic-bezier(0.65,0,0.35,1)" }}>
+            <div ref={planeInnerRef}
+              style={{ transform: "translate(-50%,-50%) rotate(0deg)", transition: "none" }}>
+              <Plane width={132} />
             </div>
-          </div>
-
-          {/* pins */}
-          {PINS.map((pin, idx) => (
-            <div key={pin.num} className="pointer-events-auto absolute"
-              style={{ left:pin.x, top:pin.y, width:30, height:30,
-                       transform:"translate(-50%,-50%)", zIndex:20 }}
-              aria-label={STAGE_LABELS[idx+1]?.text}
-            >
-              <PinRow pin={pin} activeStage={activePinStage} pulsingPin={pulsingPin}
-                dotSize={22} ringSize={30} idx={idx} reduced={reduced} ease={ease} />
-            </div>
-          ))}
-
-          {/* label */}
-          {lbl && lblPin && (
-            <div className="pointer-events-none absolute" style={{
-              ...(lbl.placement === "below" ? {
-                left: lblPin.x, top: lblPin.y + 23,
-                transform: "translateX(-50%)",
-              } : {
-                left: lblPin.x + 22, top: lblPin.y,
-                transform: "translateY(-50%)",
-              }),
-              zIndex: 30,
-            }}>
-              <LabelBox lbl={lbl} labelVisible={labelVisible}
-                typedText={typedText} labelDone={labelDone}
-                padding="6px 11px" fontSize={14} />
-            </div>
-          )}
-
-          {/* name block */}
-          <div className="pointer-events-none absolute w-full text-center" style={{ top:230, zIndex:20 }}>
-            <IntroText reduced={reduced} mobile={false} />
           </div>
         </div>
-      </section>
-    </div>
+
+        {/* pins -- re-enable pointer events */}
+        {PINS.map((pin, idx) => (
+          <div key={pin.num} className="absolute pointer-events-auto"
+            style={{ left: pin.x, top: pin.y, width: 30, height: 30,
+                     transform: "translate(-50%,-50%)", zIndex: 20 }}>
+            <PinButton pin={pin}
+              isActive={activePinNum === pin.num}
+              isPulsing={pulsingPin === pin.num}
+              dotSize={22} ringSize={30}
+              idx={idx} reduced={reduced} ease={ease}
+              label={STAGE_LABELS[idx + 1]?.text ?? ""}
+              onClick={() => handlePinClick(pin.num)}
+            />
+          </div>
+        ))}
+
+        {lbl && lblPin && (
+          <div className="pointer-events-none absolute" style={{
+            ...(lbl.placement === "below" ? {
+              left: lblPin.x, top: lblPin.y + 23,
+              transform: "translateX(-50%)",
+            } : {
+              left: lblPin.x + 22, top: lblPin.y,
+              transform: "translateY(-50%)",
+            }),
+            zIndex: 30,
+          }}>
+            <LabelBox lbl={lbl} labelVisible={labelVisible}
+              typedText={typedText} labelDone={labelDone}
+              padding="6px 11px" fontSize={14} />
+          </div>
+        )}
+
+        {/* name block -- re-enable pointer events for links */}
+        <div className="pointer-events-auto absolute w-full text-center"
+          style={{ top: 230, zIndex: 20 }}
+          onClick={(e) => e.stopPropagation()}
+        >
+          <IntroText reduced={reduced} mobile={false} />
+        </div>
+      </div>
+
+      <PsstHint mobile={false} visible={hintVisible} />
+    </section>
   );
 }
 
@@ -699,8 +742,7 @@ function HeroMobile() {
   const [mobileW, setMobileW] = useState(375);
   const reduced = useReducedMotion() ?? false;
 
-  const outerRef      = useRef<HTMLDivElement>(null);
-  const containerRef  = useRef<HTMLDivElement>(null);
+  const sectionRef    = useRef<HTMLElement>(null);
   const canvasRef     = useRef<HTMLCanvasElement>(null);
   const planeOuterRef = useRef<HTMLDivElement>(null);
   const planeFlipRef  = useRef<HTMLDivElement>(null);
@@ -708,7 +750,6 @@ function HeroMobile() {
 
   const stagesRef = useRef(getMobileStages(375));
 
-  /* matchMedia gate */
   useEffect(() => {
     const mq = window.matchMedia("(max-width: 767px)");
     const sync = (matches: boolean) => setActive(matches);
@@ -718,10 +759,10 @@ function HeroMobile() {
     return () => mq.removeEventListener("change", h);
   }, []);
 
-  /* ResizeObserver for canvas width — ignores height-only resizes */
+  /* ResizeObserver -- ignores height-only resizes */
   useEffect(() => {
     if (!active) return;
-    const el = containerRef.current; if (!el) return;
+    const el = sectionRef.current; if (!el) return;
     let lastW = 0;
     const ro = new ResizeObserver(entries => {
       for (const e of entries) {
@@ -746,18 +787,18 @@ function HeroMobile() {
     const mw   = mobileW;
     const cell = mw / MOB_COL_COUNT;
     const dot  = cell / 2;
-    const W = mw, H = WORLD_ROWS * cell;
-    canvas.width = W*dpr; canvas.height = H*dpr;
+    const W = mw, H = (MOB_ROW_END + 1) * cell;
+    canvas.width = W * dpr; canvas.height = H * dpr;
     canvas.style.width = `${W}px`; canvas.style.height = `${H}px`;
     ctx.scale(dpr, dpr);
 
     function drawFinal() {
-      ctx!.clearRect(0,0,W,H); ctx!.fillStyle="#888888"; ctx!.globalAlpha=1;
-      for (let r=0; r<WORLD_ROWS; r++) {
-        const rs=WORLD_ROWS_DATA[r];
-        for (let c=MOB_COL_START; c<=MOB_COL_END; c++) {
-          if (!rs || rs[c]!=="1") continue;
-          ctx!.fillRect((c-MOB_COL_START)*cell+(cell-dot)/2, r*cell+(cell-dot)/2, dot, dot);
+      ctx!.clearRect(0, 0, W, H); ctx!.fillStyle = "#888888"; ctx!.globalAlpha = 1;
+      for (let r = 0; r <= MOB_ROW_END; r++) {
+        const rs = WORLD_ROWS_DATA[r];
+        for (let c = MOB_COL_START; c <= MOB_COL_END; c++) {
+          if (!rs || rs[c] !== "1") continue;
+          ctx!.fillRect((c - MOB_COL_START) * cell + (cell - dot) / 2, r * cell + (cell - dot) / 2, dot, dot);
         }
       }
     }
@@ -767,110 +808,127 @@ function HeroMobile() {
     const t0 = performance.now(); let raf = 0;
     function frame(now: number) {
       const e = now - t0;
-      ctx!.clearRect(0,0,W,H); ctx!.fillStyle="#888888";
+      ctx!.clearRect(0, 0, W, H); ctx!.fillStyle = "#888888";
       for (const d of dots) {
-        let op=0;
-        for (let b=0;b<d.blinks.length;b++) { if (e<d.blinks[b]) break; op=(b&1)===0?1:0; }
-        if (e>=d.flyStart+d.flyDur) op=1;
-        if (op===0) continue;
-        let x:number, y:number;
-        if (e<d.flyStart) { x=d.sx; y=d.sy; }
-        else if (e>=d.flyStart+d.flyDur) { x=d.fx; y=d.fy; }
-        else { const p=EASE_MV((e-d.flyStart)/d.flyDur); x=lerp(d.sx,d.fx,p); y=lerp(d.sy,d.fy,p); }
-        ctx!.globalAlpha=op; ctx!.fillRect(x,y,dot,dot);
+        let op = 0;
+        for (let b = 0; b < d.blinks.length; b++) { if (e < d.blinks[b]) break; op = (b & 1) === 0 ? 1 : 0; }
+        if (e >= d.flyStart + d.flyDur) op = 1;
+        if (op === 0) continue;
+        let x: number, y: number;
+        if (e < d.flyStart) { x = d.sx; y = d.sy; }
+        else if (e >= d.flyStart + d.flyDur) { x = d.fx; y = d.fy; }
+        else { const p = EASE_MV((e - d.flyStart) / d.flyDur); x = lerp(d.sx, d.fx, p); y = lerp(d.sy, d.fy, p); }
+        ctx!.globalAlpha = op; ctx!.fillRect(x, y, dot, dot);
       }
-      ctx!.globalAlpha=1;
-      if (e<2000) raf=requestAnimationFrame(frame); else drawFinal();
+      ctx!.globalAlpha = 1;
+      if (e < 2000) raf = requestAnimationFrame(frame); else drawFinal();
     }
     raf = requestAnimationFrame(frame);
     return () => cancelAnimationFrame(raf);
   }, [active, mobileW, reduced]);
 
-  const { scrollYProgress } = useScroll({ target: outerRef, offset: ["start start","end end"] });
+  const { labelStage, typedText, labelDone, labelVisible, pulsingPin, activePinNum, hintVisible, handlePinClick, handleDeselect } =
+    useHeroAnimation({ active, reduced, stagesRef, planeOuterRef, planeFlipRef, planeInnerRef });
 
-  const { labelStage, typedText, labelDone, labelVisible, pulsingPin, activePinStage } =
-    useHeroAnimation({ active, reduced, stagesRef, planeOuterRef, planeFlipRef, planeInnerRef, scrollYProgress });
+  const mw      = mobileW;
+  const sc      = mw / 375;
+  const cell    = mw / MOB_COL_COUNT;
+  const nameTop = 366 * sc;
+  const mapH    = (MOB_ROW_END + 1) * cell;
 
-  const mw     = mobileW;
-  const cell   = mw / MOB_COL_COUNT;
-  const mapH   = WORLD_ROWS * cell;
   const mobPins = PIN_CELLS.map((pc, i) => ({
     ...PINS[i],
     cx: (pc.col - MOB_COL_START + 0.5) * cell,
-    cy: pc.row * cell + cell * 0.5,
+    cy: MOB_MAP_TOP + (pc.row + 0.5) * cell,
   }));
 
-  const lbl       = labelStage >= 0 ? STAGE_LABELS[labelStage] : null;
+  const lbl       = labelStage > 0 ? STAGE_LABELS[labelStage] : null;
   const mobLblPin = lbl != null ? mobPins[lbl.pinIdx] : null;
-  const ease: [number,number,number,number] = [0.22, 1, 0.36, 1];
+  const ease: [number, number, number, number] = [0.22, 1, 0.36, 1];
+
+  // Mobile uses different placements: Hyderabad/LA below, NY right
+  const mobPlacement = (pinIdx: number): "below" | "right" => pinIdx === 2 ? "right" : "below";
 
   return (
-    <div ref={outerRef} style={{ height:"400vh" }}>
-      <section className="sticky top-0 w-full overflow-hidden"
-        style={{ height:"100vh", backgroundColor:"#e9e9e6", display:"flex", flexDirection:"column" }}>
+    <section ref={sectionRef}
+      style={{ height: "calc(100svh - 64px)", position: "relative", overflow: "hidden", backgroundColor: "#e9e9e6" }}
+      onClick={handleDeselect}
+    >
+      {/* blue tint */}
+      <div className="pointer-events-none absolute inset-0"
+        style={{ backgroundColor: "rgba(108,159,222,0.20)" }} />
 
-        <div className="pointer-events-none absolute inset-0"
-          style={{ backgroundColor:"rgba(108,159,222,0.20)" }} />
+      {/* map canvas */}
+      <canvas ref={canvasRef} aria-hidden="true" className="pointer-events-none absolute"
+        style={{ top: MOB_MAP_TOP, left: 0, zIndex: 1 }} />
 
-        {/* map strip */}
-        <div ref={containerRef}
-          style={{ position:"relative", width:"100%", overflow:"hidden", flexShrink:0, height:mapH }}>
-          <div className="pointer-events-none absolute inset-0" style={{ zIndex:2,
-            background:"radial-gradient(closest-side, rgba(255,255,255,0.65), rgba(255,255,255,0))",
-          }} />
+      {/* glow centred on name block */}
+      <div className="pointer-events-none absolute" style={{
+        width: 520 * sc, height: 420 * sc,
+        left: mw / 2 - 260 * sc,
+        top: nameTop + 55 * sc - 210 * sc,
+        zIndex: 5,
+        background: "radial-gradient(closest-side, rgba(255,255,255,0.95) 0%, rgba(255,255,255,0.70) 40%, rgba(255,255,255,0) 100%)",
+      }} />
 
-          <canvas ref={canvasRef} aria-hidden="true"
-            style={{ position:"absolute", top:0, left:0, zIndex:1 }} />
-
-          {/* plane */}
-          <div ref={planeOuterRef} className="absolute pointer-events-none"
-            style={{ left:mw/2, top:mobPins[1].cy - 40*(mw/890), zIndex:10,
-                     opacity:0, transition:"opacity 0.8s ease" }}>
-            <div ref={planeFlipRef} style={{ transform:"scaleX(1)" }}>
-              <div ref={planeInnerRef} style={{ transform:"translate(-50%,-50%) rotate(0deg)" }}>
-                <Plane width={48} />
-              </div>
-            </div>
+      {/* plane */}
+      <div ref={planeOuterRef} className="absolute pointer-events-none"
+        style={{ left: mw / 2, top: nameTop - 40 * sc, zIndex: 10, opacity: 0, transition: "opacity 0.8s ease" }}>
+        <div ref={planeFlipRef} style={{ transform: "scaleX(1)", transition: "transform 600ms cubic-bezier(0.65,0,0.35,1)" }}>
+          <div ref={planeInnerRef} style={{ transform: "translate(-50%,-50%) rotate(0deg)", transition: "none" }}>
+            <Plane width={60} />
           </div>
-
-          {/* pins */}
-          {mobPins.map((pin, idx) => (
-            <div key={pin.num} className="absolute"
-              style={{ left:pin.cx, top:pin.cy, width:20, height:20,
-                       transform:"translate(-50%,-50%)", zIndex:20 }}>
-              <PinRow pin={pin} activeStage={activePinStage} pulsingPin={pulsingPin}
-                dotSize={18} ringSize={20} idx={idx} reduced={reduced} ease={ease} />
-            </div>
-          ))}
-
-          {/* label */}
-          {lbl && mobLblPin && (
-            <div className="pointer-events-none absolute" style={{
-              ...(lbl.placement === "below" ? {
-                left: Math.max(8, Math.min(mw - 168, mobLblPin.cx - 80)),
-                top: mobLblPin.cy + 14,
-              } : {
-                left: Math.min(mobLblPin.cx + 12, mw - 168),
-                top: mobLblPin.cy,
-                transform: "translateY(-50%)",
-              }),
-              zIndex: 30,
-              maxWidth: `calc(${mw}px - 8px)`,
-            }}>
-              <LabelBox lbl={lbl} labelVisible={labelVisible}
-                typedText={typedText} labelDone={labelDone}
-                padding="4px 8px" fontSize={12} />
-            </div>
-          )}
         </div>
+      </div>
 
-        {/* text block */}
-        <div className="pointer-events-auto flex-1 flex flex-col justify-center px-6"
-          style={{ zIndex:10, position:"relative" }}>
+      {/* pins */}
+      {mobPins.map((pin, idx) => (
+        <div key={pin.num} className="absolute"
+          style={{ left: pin.cx, top: pin.cy, width: 26, height: 26,
+                   transform: "translate(-50%,-50%)", zIndex: 20 }}>
+          <PinButton pin={pin}
+            isActive={activePinNum === pin.num}
+            isPulsing={pulsingPin === pin.num}
+            dotSize={19} ringSize={26}
+            idx={idx} reduced={reduced} ease={ease}
+            label={STAGE_LABELS[idx + 1]?.text ?? ""}
+            onClick={() => handlePinClick(pin.num)}
+          />
+        </div>
+      ))}
+
+      {/* label */}
+      {lbl && mobLblPin && (() => {
+        const placement = mobPlacement(lbl.pinIdx);
+        const labelStyle: React.CSSProperties = placement === "below" ? {
+          left: Math.max(8, Math.min(mw - 180, mobLblPin.cx - 80)),
+          top: mobLblPin.cy + 18,
+        } : {
+          left: Math.min(mobLblPin.cx + 14, mw - 180),
+          top: mobLblPin.cy,
+          transform: "translateY(-50%)",
+        };
+        return (
+          <div className="pointer-events-none absolute" style={{ ...labelStyle, zIndex: 30, maxWidth: mw - 16 }}>
+            <LabelBox lbl={lbl} labelVisible={labelVisible}
+              typedText={typedText} labelDone={labelDone}
+              padding="4px 8px" fontSize={12} />
+          </div>
+        );
+      })()}
+
+      {/* name block */}
+      <div className="absolute pointer-events-auto"
+        style={{ top: nameTop, left: 0, right: 0, zIndex: 20, display: "flex", justifyContent: "center" }}
+        onClick={(e) => e.stopPropagation()}
+      >
+        <div style={{ width: "100%", maxWidth: Math.min(327 * sc, mw - 32), textAlign: "center", padding: "0 16px" }}>
           <IntroText reduced={reduced} mobile={true} />
         </div>
-      </section>
-    </div>
+      </div>
+
+      <PsstHint mobile={true} visible={hintVisible} />
+    </section>
   );
 }
 
