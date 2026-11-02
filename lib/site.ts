@@ -203,6 +203,8 @@ export const layovers: Layover[] = [
     descriptor: "marketing site for a furniture team",
     blurb: "Designed and shipped a marketing website for a furniture team's adaptable piece.",
     thumb: "/media/layovers/adaptable-furniture.webp",
+    video: "/media/layovers/adaptable-furniture.mp4",
+    embed: [{ url: "/media/layovers/adaptable-furniture.mp4", kind: "video" }],
     external: "https://github.com/xl0u1sx/Adaptable-Furniture-Website",
   },
   /* 7 */ {
