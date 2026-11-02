@@ -48,7 +48,6 @@ export default function TravelMap() {
   const [view, setView] = useState<View>({ k: 1, x: 0, y: 0 });
   const [dragging, setDragging] = useState(false);
   const [narrow, setNarrow] = useState(false);
-  const [hadSelected, setHadSelected] = useState(false);
   const svgRef = useRef<SVGSVGElement>(null);
   const drag = useRef<{ x: number; y: number; ox: number; oy: number } | null>(
     null
@@ -248,7 +247,6 @@ export default function TravelMap() {
   const focus = (p: Place) => {
     const xy = project(p.lon, p.lat);
     shotDirRef.current = 0;
-    setHadSelected(true);
     setSelected((s) => (s?.name === p.name ? null : p));
     setShot(0);
     if (!xy) return;
@@ -457,18 +455,18 @@ export default function TravelMap() {
     return (
       <div className="w-full">
         <Window>
-          {/* Empty prompt — shown before any pin is ever selected */}
+          {/* Empty prompt */}
           <AnimatePresence>
-            {!selected && !hadSelected && (
+            {!selected && (
               <motion.div
                 key="empty"
-                className="absolute inset-0 grid place-items-center"
+                className="absolute inset-0 z-20 grid place-items-center"
                 initial={{ opacity: 0 }}
                 animate={{ opacity: 1, transition: inT }}
                 exit={{ opacity: 0, transition: outT }}
               >
                 <span
-                  className={`label text-white/90 ${compact ? "text-center text-[9px] leading-tight" : ""}`}
+                  className={`label ${still ? "text-white/90" : "text-grey-60"} ${compact ? "text-center text-[9px] leading-tight" : ""}`}
                 >
                   {compact ? "Tap a pin" : "Click on any pin!"}
                 </span>
@@ -522,11 +520,12 @@ export default function TravelMap() {
             )}
           </AnimatePresence>
 
-          {/* Window shade — cream overlay that slides up to reveal, down to cover */}
-          {hadSelected && !still && (
+          {/* Window shade — always present; slides up to reveal photo, down to cover */}
+          {!still && (
             <motion.div
               className="absolute inset-0 z-10 pointer-events-none"
               style={{ backgroundColor: "#e9e6df" }}
+              initial={{ y: "0%" }}
               animate={{ y: selected ? "-100%" : "0%" }}
               transition={selected ? slowT : inT}
             />
